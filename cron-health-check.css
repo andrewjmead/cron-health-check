@@ -169,7 +169,7 @@
 }
 
 .chc-step.is-active .chc-dot {
-	background: #2662eb;
+	background: #9a9a9a;
 	animation: chc-pulse 1s ease-in-out infinite;
 }
 
@@ -189,10 +189,10 @@
 .chc-step.is-done .chc-dot::after {
 	content: '';
 	position: absolute;
-	left: 7px;
-	top: 4px;
-	width: 4px;
-	height: 9px;
+	left: 7.5px;
+	top: 5px;
+	width: 3px;
+	height: 7px;
 	border: solid #fff;
 	border-width: 0 2px 2px 0;
 	transform: rotate(45deg);
@@ -227,8 +227,8 @@
 }
 
 @keyframes chc-pulse {
-	0%, 100% { box-shadow: 0 0 0 0 rgba(91, 63, 160, 0.5); }
-	50% { box-shadow: 0 0 0 6px rgba(91, 63, 160, 0); }
+	0%, 100% { box-shadow: 0 0 0 0 rgba(120, 120, 120, 0.45); }
+	50% { box-shadow: 0 0 0 6px rgba(120, 120, 120, 0); }
 }
 
 @media (prefers-reduced-motion: reduce) {
