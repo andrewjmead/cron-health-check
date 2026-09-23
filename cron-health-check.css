@@ -41,28 +41,18 @@
 
 .chc-button {
 	border-radius: 6px;
-	font-weight: 700;
+	font-weight: 500;
 	font-size: 14px;
 	padding: 12px 22px;
 	border: 0;
 	cursor: pointer;
-	background: linear-gradient(180deg, #4a80f0 0%, #2662eb 55%, #1f56d6 100%);
+	background: #2662eb;
 	color: #fff;
-	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 1px 2px rgba(31, 86, 214, 0.35), 0 3px 8px rgba(38, 98, 235, 0.25);
-	transition: transform .12s, box-shadow .12s, filter .12s;
 }
 
 .chc-button:hover,
 .chc-button:focus {
-	filter: brightness(1.06);
-	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.32), 0 2px 4px rgba(31, 86, 214, 0.35), 0 6px 14px rgba(38, 98, 235, 0.3);
-	transform: translateY(-1px);
-}
-
-.chc-button:active {
-	transform: translateY(0);
-	filter: brightness(0.97);
-	box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.2);
+	background: #1f56d6;
 }
 
 .chc-button:disabled {
@@ -74,15 +64,11 @@
 	background: #eaf0fd;
 	color: #1f4fb8;
 	border: 1px solid #c9d8f8;
-	box-shadow: none;
 }
 
 .chc-button-secondary:hover,
 .chc-button-secondary:focus {
 	background: #dce6fb;
-	filter: none;
-	box-shadow: none;
-	transform: none;
 }
 
 .chc-link-button {
