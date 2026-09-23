@@ -1,0 +1,264 @@
+.chc-wrap {
+	max-width: 960px;
+	font-family: inherit;
+	color: #1a1a1a;
+}
+
+.chc-header {
+	padding: 32px 24px;
+	margin: 16px 0 24px;
+	background-color: #fff;
+	background-image: radial-gradient(circle, #d9d9d9 1px, transparent 1px);
+	background-size: 16px 16px;
+	border: 1px solid #e5e5e5;
+	border-radius: 8px;
+}
+
+.chc-header h1 {
+	font-size: 28px;
+	font-weight: 700;
+	color: #1a1a1a;
+	margin: 0 0 8px;
+}
+
+.chc-header p {
+	font-size: 14px;
+	color: #4a4a4a;
+	margin: 0;
+	max-width: 640px;
+}
+
+.chc-card {
+	background: #fff;
+	border: 1px solid #e5e5e5;
+	border-radius: 8px;
+	padding: 24px;
+	margin-bottom: 24px;
+}
+
+.chc-card h2 {
+	font-size: 18px;
+	font-weight: 700;
+	margin: 0 0 16px;
+	color: #1a1a1a;
+}
+
+.chc-button {
+	border-radius: 6px;
+	font-weight: 700;
+	font-size: 14px;
+	padding: 10px 22px;
+	border: 0;
+	cursor: pointer;
+	background: #5b3fa0;
+	color: #fff;
+}
+
+.chc-button:hover,
+.chc-button:focus {
+	background: #4a3385;
+}
+
+.chc-button:disabled {
+	opacity: 0.55;
+	cursor: default;
+}
+
+.chc-button-secondary {
+	background: #efecf8;
+	color: #3d2c70;
+	border: 1px solid #d5cdee;
+}
+
+.chc-button-secondary:hover,
+.chc-button-secondary:focus {
+	background: #e2dcf4;
+}
+
+/* Stepper */
+.chc-stepper {
+	display: flex;
+	gap: 24px;
+	list-style: none;
+	margin: 20px 0;
+	padding: 0;
+}
+
+.chc-step {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 13px;
+	color: #8a8a8a;
+}
+
+.chc-dot {
+	width: 12px;
+	height: 12px;
+	border-radius: 50%;
+	background: #d9d9d9;
+	display: inline-block;
+}
+
+.chc-step.is-active {
+	color: #1a1a1a;
+	font-weight: 700;
+}
+
+.chc-step.is-active .chc-dot {
+	background: #5b3fa0;
+	animation: chc-pulse 1s ease-in-out infinite;
+}
+
+.chc-step.is-done {
+	color: #1e8e3e;
+}
+
+.chc-step.is-done .chc-dot {
+	background: #1e8e3e;
+}
+
+@keyframes chc-pulse {
+	0%, 100% { box-shadow: 0 0 0 0 rgba(91, 63, 160, 0.5); }
+	50% { box-shadow: 0 0 0 6px rgba(91, 63, 160, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.chc-step.is-active .chc-dot {
+		animation: none;
+	}
+}
+
+/* Result card */
+.chc-result-empty {
+	color: #6a6a6a;
+	margin: 0;
+}
+
+.chc-result-card {
+	border: 1px solid #e5e5e5;
+	border-left-width: 4px;
+	border-radius: 6px;
+	padding: 16px 20px;
+	background: #fff;
+}
+
+.chc-result-card.chc-status-passed { border-left-color: #1e8e3e; }
+.chc-result-card.chc-status-failed { border-left-color: #b3261e; }
+.chc-result-card.chc-status-running { border-left-color: #b26a00; }
+.chc-result-card.chc-status-none { border-left-color: #5b3fa0; }
+
+.chc-result-status {
+	font-size: 15px;
+}
+
+.chc-result-card.chc-status-passed .chc-result-status { color: #1e8e3e; }
+.chc-result-card.chc-status-failed .chc-result-status { color: #b3261e; }
+.chc-result-card.chc-status-running .chc-result-status { color: #b26a00; }
+
+.chc-result-message {
+	margin: 6px 0;
+	font-size: 14px;
+}
+
+.chc-result-meta {
+	display: flex;
+	gap: 24px;
+	margin: 8px 0 0;
+	font-size: 12px;
+	color: #6a6a6a;
+}
+
+.chc-result-meta dt {
+	font-weight: 700;
+	display: inline;
+}
+
+.chc-result-meta dd {
+	display: inline;
+	margin: 0 0 0 4px;
+}
+
+.chc-lock-action {
+	margin: 12px 0 0;
+}
+
+/* Diagnostics */
+.chc-diagnostics {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.chc-diagnostic {
+	padding: 12px 0 12px 20px;
+	border-bottom: 1px solid #f0f0f0;
+	border-left: 3px solid #d9d9d9;
+	position: relative;
+}
+
+.chc-diagnostic:last-child {
+	border-bottom: 0;
+}
+
+.chc-diagnostic.chc-status-ok { border-left-color: #1e8e3e; }
+.chc-diagnostic.chc-status-warn { border-left-color: #b26a00; }
+.chc-diagnostic.chc-status-fail { border-left-color: #b3261e; }
+.chc-diagnostic.chc-status-info { border-left-color: #5b3fa0; }
+
+.chc-diagnostic-label {
+	display: block;
+	font-weight: 700;
+	font-size: 13px;
+}
+
+.chc-diagnostic-message {
+	display: block;
+	font-size: 13px;
+	margin-top: 2px;
+}
+
+.chc-diagnostic-hint {
+	display: block;
+	font-size: 12px;
+	color: #5b3fa0;
+	margin-top: 4px;
+}
+
+/* Events table */
+.chc-headline {
+	font-size: 14px;
+	font-weight: 700;
+	margin: 0 0 12px;
+}
+
+.chc-headline.chc-status-ok { color: #1e8e3e; }
+.chc-headline.chc-status-fail { color: #b3261e; }
+
+.chc-events-table tr.chc-row-overdue td {
+	background: #fdf2f1;
+}
+
+.chc-muted {
+	color: #8a8a8a;
+	font-size: 12px;
+}
+
+.chc-badge {
+	display: inline-block;
+	font-size: 11px;
+	font-weight: 700;
+	border-radius: 4px;
+	padding: 2px 8px;
+	margin-right: 4px;
+}
+
+.chc-badge-overdue {
+	background: #b3261e;
+	color: #fff;
+}
+
+.chc-badge-orphaned {
+	background: #f0f0f0;
+	color: #6a6a6a;
+}
