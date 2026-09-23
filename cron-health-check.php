@@ -88,7 +88,7 @@ final class Cron_Health_Check {
 	}
 
 	/**
-	 * Add a "Use Tool" link to the plugin row on the Plugins screen.
+	 * Add a "Dashboard" link to the plugin row on the Plugins screen.
 	 *
 	 * @param string[] $links Existing action links.
 	 * @return string[]
@@ -97,7 +97,7 @@ final class Cron_Health_Check {
 		$link = sprintf(
 			'<a href="%s">%s</a>',
 			esc_url( self::page_url() ),
-			esc_html__( 'Use Tool', 'cron-health-check' )
+			esc_html__( 'Dashboard', 'cron-health-check' )
 		);
 		array_unshift( $links, $link );
 		return $links;
