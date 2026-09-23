@@ -5,7 +5,7 @@
 }
 
 .chc-header {
-	padding: 24px;
+	padding: 18px 24px;
 	margin: 16px 0 24px;
 	background: #fff;
 	border: 1px solid #e5e5e5;
@@ -14,10 +14,12 @@
 }
 
 .chc-header h1 {
-	font-size: 28px;
+	font-size: 24px;
 	font-weight: 700;
+	line-height: 1;
 	color: #1a1a1a;
 	margin: 0;
+	padding: 0;
 }
 
 .chc-card {
