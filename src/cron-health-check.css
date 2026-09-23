@@ -5,6 +5,17 @@
 	color: #1a1a1a;
 }
 
+.chc-wrap .notice,
+.chc-wrap .updated,
+.chc-wrap .error,
+.chc-wrap .update-nag,
+#wpbody-content > .notice,
+#wpbody-content > .updated,
+#wpbody-content > .error,
+#wpbody-content > .update-nag {
+	display: none !important;
+}
+
 .chc-header {
 	margin: 0 0 24px;
 }

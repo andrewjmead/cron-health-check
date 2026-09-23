@@ -78,6 +78,7 @@ final class Cron_Health_Check {
 	private function __construct() {
 		add_action( 'admin_menu', array( $this, 'admin_menu' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
+		add_action( 'in_admin_header', array( $this, 'remove_admin_notices' ), 1000 );
 		add_action( 'wp_ajax_chc_start_test', array( $this, 'ajax_start_test' ) );
 		add_action( 'wp_ajax_chc_test_status', array( $this, 'ajax_test_status' ) );
 		add_action( 'wp_ajax_chc_clear_lock', array( $this, 'ajax_clear_lock' ) );
@@ -172,6 +173,20 @@ final class Cron_Health_Check {
 			'cron-health-check',
 			array( $this, 'render_page' )
 		);
+	}
+
+	/**
+	 * Strip every admin notice hook on our screen so nothing renders inside the card.
+	 */
+	public function remove_admin_notices() {
+		$screen = get_current_screen();
+		if ( ! $screen || 'tools_page_cron-health-check' !== $screen->id ) {
+			return;
+		}
+		remove_all_actions( 'admin_notices' );
+		remove_all_actions( 'all_admin_notices' );
+		remove_all_actions( 'user_admin_notices' );
+		remove_all_actions( 'network_admin_notices' );
 	}
 
 	/**
