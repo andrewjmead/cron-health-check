@@ -280,7 +280,7 @@ final class Cron_Health_Check {
 				</header>
 
 				<button type="button" id="chc-run-test" class="chc-button">
-					<?php esc_html_e( 'Test Cron Health', 'cron-health-check' ); ?>
+					<?php esc_html_e( 'Run A Health Check', 'cron-health-check' ); ?>
 				</button>
 
 				<ol class="chc-stepper" id="chc-stepper">
