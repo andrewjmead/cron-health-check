@@ -4,7 +4,7 @@ Tags: cron, wp-cron, scheduled events, debugging, site health
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.0
+Stable tag: 1.0.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -23,6 +23,11 @@ The test checks three main things:
 This is a free plugin. There's no pro version and no locked features.
 
 == Changelog ==
+
+= 1.0.1 =
+* Hide admin notices on the Cron Health Check screen.
+* Redirect to the Cron Health Check page after activation.
+* UI refinements.
 
 = 1.0.0 =
 * Initial release.
