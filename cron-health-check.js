@@ -241,6 +241,7 @@
 		runButton.addEventListener( 'click', function () {
 			setRunning( true );
 			resetSteps();
+			render( null );
 			setStep( 'enabled', 'active', '' );
 
 			post( 'chc_start_test', function ( res ) {
