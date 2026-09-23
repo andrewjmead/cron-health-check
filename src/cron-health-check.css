@@ -180,7 +180,8 @@
 }
 
 .chc-step.is-active .chc-step-label,
-.chc-step.is-done .chc-step-label {
+.chc-step.is-done .chc-step-label,
+.chc-step.is-failed .chc-step-label {
 	color: #1a1a1a;
 }
 
