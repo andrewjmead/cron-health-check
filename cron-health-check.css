@@ -94,7 +94,7 @@
 	flex-direction: column;
 	gap: 14px;
 	list-style: none;
-	margin: 24px 0 0;
+	margin: 32px 0 0;
 	padding: 0;
 }
 
@@ -109,8 +109,8 @@
 }
 
 .chc-dot {
-	width: 24px;
-	height: 24px;
+	width: 20px;
+	height: 20px;
 	border-radius: 50%;
 	background: #d9d9d9;
 	display: flex;
@@ -122,7 +122,7 @@
 }
 
 .chc-step-num {
-	font-size: 12px;
+	font-size: 11px;
 	font-weight: 700;
 	color: #6a6a6a;
 	line-height: 1;
@@ -136,6 +136,7 @@
 .chc-step-label {
 	font-size: 14px;
 	font-weight: 600;
+	line-height: 20px;
 	color: #8a8a8a;
 }
 
@@ -174,10 +175,10 @@
 .chc-step.is-done .chc-dot::after {
 	content: '';
 	position: absolute;
-	left: 9px;
-	top: 5px;
-	width: 5px;
-	height: 10px;
+	left: 7px;
+	top: 4px;
+	width: 4px;
+	height: 9px;
 	border: solid #fff;
 	border-width: 0 2px 2px 0;
 	transform: rotate(45deg);
@@ -196,10 +197,10 @@
 .chc-step.is-failed .chc-dot::after {
 	content: '';
 	position: absolute;
-	left: 11px;
-	top: 6px;
+	left: 9px;
+	top: 5px;
 	width: 2px;
-	height: 12px;
+	height: 10px;
 	background: #fff;
 }
 
