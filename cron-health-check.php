@@ -84,6 +84,23 @@ final class Cron_Health_Check {
 		add_action( self::TEST_HOOK, array( $this, 'on_test_event' ) );
 		add_filter( 'site_status_tests', array( $this, 'site_status_tests' ) );
 		add_filter( 'debug_information', array( $this, 'debug_information' ) );
+		add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), array( $this, 'plugin_action_links' ) );
+	}
+
+	/**
+	 * Add a "Run a Cron Health Check" link to the plugin row on the Plugins screen.
+	 *
+	 * @param string[] $links Existing action links.
+	 * @return string[]
+	 */
+	public function plugin_action_links( array $links ): array {
+		$link = sprintf(
+			'<a href="%s">%s</a>',
+			esc_url( self::page_url() ),
+			esc_html__( 'Run a Cron Health Check', 'cron-health-check' )
+		);
+		array_unshift( $links, $link );
+		return $links;
 	}
 
 	/**

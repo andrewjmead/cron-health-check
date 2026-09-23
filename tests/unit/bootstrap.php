@@ -14,6 +14,7 @@ Brain\Monkey\setUp();
 // Stub functions the plugin file calls at load time.
 Brain\Monkey\Functions\when( 'register_deactivation_hook' )->justReturn();
 Brain\Monkey\Functions\when( 'register_uninstall_hook' )->justReturn();
+Brain\Monkey\Functions\when( 'plugin_basename' )->returnArg();
 
 require_once dirname( __DIR__, 2 ) . '/cron-health-check.php';
 
