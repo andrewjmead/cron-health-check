@@ -9,33 +9,13 @@
 	margin: 0 0 24px;
 }
 
-.chc-header-row {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: 16px;
-	margin: 0 0 8px;
-}
-
 .chc-header h1 {
 	font-size: 24px;
 	font-weight: 700;
 	line-height: 1;
 	color: #1a1a1a;
-	margin: 0;
+	margin: 0 0 8px;
 	padding: 0;
-}
-
-.chc-plugin-link {
-	font-size: 13px;
-	color: #6a6a6a;
-	text-decoration: underline;
-	white-space: nowrap;
-}
-
-.chc-plugin-link:hover,
-.chc-plugin-link:focus {
-	color: #1a1a1a;
 }
 
 .chc-subtitle {
