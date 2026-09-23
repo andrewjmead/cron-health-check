@@ -268,7 +268,7 @@ final class Cron_Health_Check {
 			<section class="chc-card chc-test-panel">
 				<header class="chc-header">
 					<h1><?php esc_html_e( 'Cron Health Check', 'cron-health-check' ); ?></h1>
-					<p class="chc-subtitle"><?php esc_html_e( 'Run the test to check whether WP-Cron fires on this site.', 'cron-health-check' ); ?></p>
+					<p class="chc-subtitle"><?php esc_html_e( 'A simple test to verify that WP-Cron is working on this WordPress site', 'cron-health-check' ); ?></p>
 				</header>
 
 				<button type="button" id="chc-run-test" class="chc-button">
@@ -339,8 +339,8 @@ final class Cron_Health_Check {
 	 */
 	public static function result_title( string $status ): string {
 		return 'passed' === $status
-			? __( 'Health check passed', 'cron-health-check' )
-			: __( 'Health check failed', 'cron-health-check' );
+			? __( 'Health Check Passed!', 'cron-health-check' )
+			: __( 'Health Check Failed!', 'cron-health-check' );
 	}
 
 	/**
