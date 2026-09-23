@@ -9,4 +9,4 @@ Icon filenames per https://developer.wordpress.org/plugins/wordpress-org/plugin-
 - `icon-256x256.png` – high-DPI fallback
 
 `icon-concepts/` holds candidate designs (`preview.html` shows them side by side at 256/128/64/32px).
-Once a concept is chosen, copy it to the filenames above.
+The current icon is `02-pulse`.
