@@ -26,7 +26,6 @@
 .chc-card {
 	background: #fff;
 	border: 1px solid #e5e5e5;
-	border-bottom-width: 3px;
 	border-radius: 8px;
 	padding: 24px;
 	margin-bottom: 24px;
@@ -90,9 +89,6 @@
 
 /* Stepper */
 .chc-stepper {
-	display: flex;
-	flex-direction: column;
-	gap: 8px;
 	list-style: none;
 	margin: 32px 0 0;
 	padding: 0;
@@ -105,39 +101,75 @@
 .chc-step {
 	display: flex;
 	align-items: flex-start;
-	gap: 12px;
+	gap: 14px;
+	position: relative;
+	padding-bottom: 20px;
+}
+
+.chc-step:last-child {
+	padding-bottom: 0;
+}
+
+.chc-step::before {
+	content: '';
+	position: absolute;
+	left: 15px;
+	top: 32px;
+	bottom: 0;
+	border-left: 2px dotted #d4d4d4;
+}
+
+.chc-step:last-child::before {
+	display: none;
+}
+
+.chc-step.is-done::before {
+	border-left: 2px solid #2662eb;
 }
 
 .chc-dot {
-	width: 20px;
-	height: 20px;
+	width: 32px;
+	height: 32px;
 	border-radius: 50%;
-	background: #d9d9d9;
+	background: #f1f1f2;
+	color: #8a8a8a;
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	position: relative;
+	z-index: 1;
 	flex-shrink: 0;
-	transition: background-color .2s;
+	transition: background-color .2s, box-shadow .2s;
 }
 
-.chc-step-num {
-	font-size: 11px;
-	font-weight: 700;
-	color: #6a6a6a;
-	line-height: 1;
+.chc-step-icon {
+	display: block;
+	width: 15px;
+	height: 15px;
+}
+
+.chc-step[data-step="spawning"] .chc-step-icon {
+	transform: translateX(1px);
 }
 
 .chc-step-body {
 	display: flex;
 	flex-direction: column;
+	min-width: 0;
+}
+
+.chc-step-num {
+	font-size: 11px;
+	line-height: 14px;
+	color: #8a8a8a;
+	padding-top: 1px;
 }
 
 .chc-step-label {
 	font-size: 14px;
-	font-weight: 600;
-	line-height: 20px;
-	color: #8a8a8a;
+	font-weight: 500;
+	line-height: 18px;
+	color: #6a6a6a;
 }
 
 .chc-step-status {
@@ -145,8 +177,11 @@
 	font-size: 12px;
 	color: #6a6a6a;
 	line-height: 16px;
-	min-height: 16px;
-	margin-top: 2px;
+	margin-top: 4px;
+}
+
+.chc-step-status:empty {
+	display: none;
 }
 
 .chc-step.is-active .chc-step-label,
@@ -155,32 +190,35 @@
 }
 
 .chc-step.is-active .chc-dot {
-	background: #9a9a9a;
+	background: #e5e5e6;
+	color: #6a6a6a;
 	animation: chc-pulse 1s ease-in-out infinite;
 }
 
-.chc-step.is-active .chc-step-num {
-	color: #fff;
-}
-
 .chc-step.is-done .chc-dot {
-	background: #1e8e3e;
+	background: #2662eb;
+	box-shadow: 0 0 0 4px #dbe6fb;
 }
 
-.chc-step.is-done .chc-step-num,
-.chc-step.is-failed .chc-step-num {
+.chc-step.is-failed .chc-dot {
+	background: #b3261e;
+	box-shadow: 0 0 0 4px #f6dcd9;
+}
+
+.chc-step.is-done .chc-step-icon,
+.chc-step.is-failed .chc-step-icon {
 	display: none;
 }
 
 .chc-step.is-done .chc-dot::after {
 	content: '';
 	position: absolute;
-	left: 7.5px;
-	top: 5px;
-	width: 3px;
-	height: 7px;
+	left: 12px;
+	top: 8px;
+	width: 5px;
+	height: 10px;
 	border: solid #fff;
-	border-width: 0 2px 2px 0;
+	border-width: 0 2.5px 2.5px 0;
 	transform: rotate(45deg);
 }
 
@@ -189,18 +227,15 @@
 	color: #b3261e;
 }
 
-.chc-step.is-failed .chc-dot {
-	background: #b3261e;
-}
-
 .chc-step.is-failed .chc-dot::before,
 .chc-step.is-failed .chc-dot::after {
 	content: '';
 	position: absolute;
-	left: 9px;
-	top: 5px;
-	width: 2px;
-	height: 10px;
+	left: 15px;
+	top: 10px;
+	width: 2.5px;
+	height: 12px;
+	border-radius: 1px;
 	background: #fff;
 }
 
@@ -213,7 +248,7 @@
 }
 
 @keyframes chc-pulse {
-	0%, 100% { box-shadow: 0 0 0 0 rgba(120, 120, 120, 0.45); }
+	0%, 100% { box-shadow: 0 0 0 0 rgba(120, 120, 120, 0.35); }
 	50% { box-shadow: 0 0 0 6px rgba(120, 120, 120, 0); }
 }
 
@@ -229,7 +264,6 @@
 /* Result card */
 .chc-result-card {
 	border: 1px solid;
-	border-bottom-width: 3px;
 	border-radius: 6px;
 	padding: 16px 20px;
 	color: #1a1a1a;
@@ -237,12 +271,12 @@
 
 .chc-result-card.chc-status-passed {
 	background: #e8f5ec;
-	border-color: #1e8e3e;
+	border-color: #8fcaa0;
 }
 
 .chc-result-card.chc-status-failed {
 	background: #fbeae8;
-	border-color: #b3261e;
+	border-color: #e6aca6;
 }
 
 .chc-result-status {

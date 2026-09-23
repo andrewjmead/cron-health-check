@@ -277,11 +277,32 @@ final class Cron_Health_Check {
 				</button>
 
 				<ol class="chc-stepper" id="chc-stepper">
-					<li class="chc-step" data-step="enabled"><span class="chc-dot"><span class="chc-step-num">1</span></span><span class="chc-step-body"><span class="chc-step-label"><?php esc_html_e( 'Checking that WP-Cron is enabled', 'cron-health-check' ); ?></span><span class="chc-step-status" data-status></span></span></li>
-					<li class="chc-step" data-step="overdue"><span class="chc-dot"><span class="chc-step-num">2</span></span><span class="chc-step-body"><span class="chc-step-label"><?php esc_html_e( 'Checking for overdue cron events', 'cron-health-check' ); ?></span><span class="chc-step-status" data-status></span></span></li>
-					<li class="chc-step" data-step="scheduled"><span class="chc-dot"><span class="chc-step-num">3</span></span><span class="chc-step-body"><span class="chc-step-label"><?php esc_html_e( 'Scheduling a test cron event', 'cron-health-check' ); ?></span><span class="chc-step-status" data-status></span></span></li>
-					<li class="chc-step" data-step="spawning"><span class="chc-dot"><span class="chc-step-num">4</span></span><span class="chc-step-body"><span class="chc-step-label"><?php esc_html_e( 'Attempting to run test event', 'cron-health-check' ); ?></span><span class="chc-step-status" data-status></span></span></li>
-					<li class="chc-step" data-step="waiting"><span class="chc-dot"><span class="chc-step-num">5</span></span><span class="chc-step-body"><span class="chc-step-label"><?php esc_html_e( 'Waiting for test cron event to fire', 'cron-health-check' ); ?></span><span class="chc-step-status" data-status></span></span></li>
+					<?php
+					$steps = array(
+						'enabled'   => array( __( 'Checking that WP-Cron is enabled', 'cron-health-check' ), '<path d="M12 2v10"/><path d="M18.4 6.6a9 9 0 1 1-12.77.04"/>' ),
+						'overdue'   => array( __( 'Checking for overdue cron events', 'cron-health-check' ), '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>' ),
+						'scheduled' => array( __( 'Scheduling a test cron event', 'cron-health-check' ), '<path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/>' ),
+						'spawning'  => array( __( 'Attempting to run test event', 'cron-health-check' ), '<path d="M6 4.5v15a1 1 0 0 0 1.5.86l12-7.5a1 1 0 0 0 0-1.72l-12-7.5A1 1 0 0 0 6 4.5z"/>' ),
+						'waiting'   => array( __( 'Waiting for test cron event to fire', 'cron-health-check' ), '<path d="M5 22h14"/><path d="M5 2h14"/><path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22"/><path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"/>' ),
+					);
+					$n     = 0;
+					foreach ( $steps as $key => $step ) :
+						++$n;
+						?>
+					<li class="chc-step" data-step="<?php echo esc_attr( $key ); ?>">
+						<span class="chc-dot"><svg class="chc-step-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><?php echo $step[1]; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static SVG path markup. ?></svg></span>
+						<span class="chc-step-body">
+							<span class="chc-step-num">
+							<?php
+							/* translators: %d: step number. */
+							echo esc_html( sprintf( __( 'Step %d', 'cron-health-check' ), $n ) );
+							?>
+							</span>
+							<span class="chc-step-label"><?php echo esc_html( $step[0] ); ?></span>
+							<span class="chc-step-status" data-status></span>
+						</span>
+					</li>
+					<?php endforeach; ?>
 				</ol>
 
 				<div id="chc-result" class="chc-result" aria-live="polite"><?php $this->render_result( $summary ); ?></div>
