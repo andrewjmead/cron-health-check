@@ -91,7 +91,8 @@ final class TestSummaryTest extends CHC_Unit_TestCase {
 		$summary = Cron_Health_Check::summarize_test( $test, 1000 + 31, 30 );
 
 		$this->assertSame( 'failed', $summary['status'] );
-		$this->assertSame( 'timeout', $summary['reason'] );
+		$this->assertSame( 'timeout_no_request', $summary['reason'] );
+		$this->assertSame( 0, strpos( $summary['reason'], 'timeout' ) );
 	}
 
 	/**

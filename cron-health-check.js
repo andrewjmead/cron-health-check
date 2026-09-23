@@ -6,8 +6,6 @@
 	var runButton = document.getElementById( 'chc-run-test' );
 	var result = document.getElementById( 'chc-result' );
 	var steps = document.querySelectorAll( '#chc-stepper .chc-step' );
-	var toggle = document.getElementById( 'chc-toggle-events' );
-	var allEvents = document.getElementById( 'chc-all-events' );
 	var clearLock = document.getElementById( 'chc-clear-lock' );
 	var pollTimer = null;
 	var activeStep = null;
@@ -121,11 +119,26 @@
 		if ( test.source ) {
 			meta += '<div><dt>' + esc( t( 'source' ) ) + '</dt><dd>' + esc( test.source ) + '</dd></div>';
 		}
+		var spawnLine = '';
+		if ( test.status === 'failed' && test.spawn ) {
+			var detail = '';
+			if ( test.spawn.error ) {
+				detail = test.spawn.error;
+			} else if ( test.spawn.code ) {
+				detail = 'HTTP ' + test.spawn.code;
+			} else if ( test.spawn.alternate ) {
+				detail = 'ALTERNATE_WP_CRON';
+			}
+			if ( detail ) {
+				spawnLine = '<p class="chc-spawn-detail">' + esc( t( 'loopback' ) ) + ': <code>' + esc( detail ) + '</code></p>';
+			}
+		}
 		result.innerHTML =
 			'<div class="chc-result-card chc-status-' + esc( test.status ) + '">' +
 				'<strong class="chc-result-status">' + esc( statusLabel( test.status ) ) + '</strong>' +
 				'<p class="chc-result-message">' + esc( messageFor( test ) ) + '</p>' +
 				( meta ? '<dl class="chc-result-meta">' + meta + '</dl>' : '' ) +
+				spawnLine +
 			'</div>';
 	}
 
@@ -134,6 +147,42 @@
 		render( test );
 		finishSteps( test && test.status ? test.status : 'failed' );
 		setRunning( false );
+		refreshSections();
+	}
+
+	function refreshSections() {
+		fetch( window.location.href, { credentials: 'same-origin' } )
+			.then( function ( r ) { return r.text(); } )
+			.then( function ( html ) {
+				var doc = new DOMParser().parseFromString( html, 'text/html' );
+				var newDiag = doc.querySelector( '.chc-diagnostics' );
+				var oldDiag = document.querySelector( '.chc-diagnostics' );
+				if ( newDiag && oldDiag ) {
+					oldDiag.innerHTML = newDiag.innerHTML;
+				}
+				var newEvents = doc.getElementById( 'chc-events-section' );
+				var oldEvents = document.getElementById( 'chc-events-section' );
+				if ( newEvents && oldEvents ) {
+					oldEvents.innerHTML = newEvents.innerHTML;
+					bindToggle();
+				}
+			} )
+			.catch( function () {} );
+	}
+
+	function bindToggle() {
+		var btn = document.getElementById( 'chc-toggle-events' );
+		var box = document.getElementById( 'chc-all-events' );
+		if ( ! btn || ! box ) { return; }
+		btn.addEventListener( 'click', function () {
+			var open = box.hasAttribute( 'hidden' );
+			if ( open ) {
+				box.removeAttribute( 'hidden' );
+			} else {
+				box.setAttribute( 'hidden', '' );
+			}
+			btn.setAttribute( 'aria-expanded', open ? 'true' : 'false' );
+		} );
 	}
 
 	function stopPolling() {
@@ -187,17 +236,7 @@
 		} );
 	}
 
-	if ( toggle && allEvents ) {
-		toggle.addEventListener( 'click', function () {
-			var open = allEvents.hasAttribute( 'hidden' );
-			if ( open ) {
-				allEvents.removeAttribute( 'hidden' );
-			} else {
-				allEvents.setAttribute( 'hidden', '' );
-			}
-			toggle.setAttribute( 'aria-expanded', open ? 'true' : 'false' );
-		} );
-	}
+	bindToggle();
 
 	if ( clearLock ) {
 		clearLock.addEventListener( 'click', function () {

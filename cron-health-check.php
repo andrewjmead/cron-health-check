@@ -209,6 +209,7 @@ final class Cron_Health_Check {
 					'source'          => __( 'Source', 'cron-health-check' ),
 					'ran'             => __( 'Ran', 'cron-health-check' ),
 					'justNow'         => __( 'just now', 'cron-health-check' ),
+					'loopback'        => __( 'Loopback', 'cron-health-check' ),
 				),
 			)
 		);
@@ -277,7 +278,7 @@ final class Cron_Health_Check {
 				</ul>
 			</section>
 
-			<section class="chc-card">
+			<section class="chc-card" id="chc-events-section">
 				<h2><?php esc_html_e( 'Scheduled events', 'cron-health-check' ); ?></h2>
 				<?php $this->render_overdue_headline( $overdue ); ?>
 				<?php $this->render_events_table( $overdue, true ); ?>
@@ -339,8 +340,34 @@ final class Cron_Health_Check {
 					<div><dt><?php esc_html_e( 'Source', 'cron-health-check' ); ?></dt><dd><?php echo esc_html( $test['source'] ); ?></dd></div>
 				<?php endif; ?>
 			</dl>
+			<?php $spawn = ( is_array( $test ) && isset( $test['spawn'] ) && is_array( $test['spawn'] ) ) ? $test['spawn'] : null; ?>
+			<?php if ( 'failed' === $summary['status'] && null !== $spawn ) : ?>
+				<p class="chc-spawn-detail">
+					<?php esc_html_e( 'Loopback', 'cron-health-check' ); ?>:
+					<code><?php echo esc_html( self::spawn_detail( $spawn ) ); ?></code>
+				</p>
+			<?php endif; ?>
 		</div>
 		<?php
+	}
+
+	/**
+	 * One-line summary of a captured spawn result.
+	 *
+	 * @param array $spawn Spawn record.
+	 * @return string
+	 */
+	public static function spawn_detail( array $spawn ): string {
+		if ( ! empty( $spawn['alternate'] ) ) {
+			return 'ALTERNATE_WP_CRON';
+		}
+		if ( ! empty( $spawn['error'] ) ) {
+			return $spawn['error'];
+		}
+		if ( ! empty( $spawn['code'] ) ) {
+			return sprintf( 'HTTP %d', (int) $spawn['code'] );
+		}
+		return __( 'no request recorded', 'cron-health-check' );
 	}
 
 	/**
@@ -546,7 +573,7 @@ final class Cron_Health_Check {
 					__( 'A doing_cron lock was set %ds ago; a spawn is likely in progress.', 'cron-health-check' ),
 					(int) $lock_state['age']
 				),
-				'hint'    => '',
+				'hint'    => __( 'The test clears the lock before spawning, so it will not block a run.', 'cron-health-check' ),
 			);
 		}
 
@@ -681,7 +708,7 @@ final class Cron_Health_Check {
 				'reason'       => 'disabled',
 				'spawn'        => null,
 				'lock_cleared' => false,
-				'lock_fresh'   => false,
+				'lock_age'     => 0,
 				'message'      => __( 'WP-Cron is disabled via DISABLE_WP_CRON. WordPress will never trigger scheduled events itself; a system cron must call wp-cron.php.', 'cron-health-check' ),
 			);
 			update_option( self::OPTION, $test, false );
@@ -691,16 +718,12 @@ final class Cron_Health_Check {
 		wp_clear_scheduled_hook( self::TEST_HOOK );
 
 		$lock_cleared = false;
-		$lock_fresh   = false;
+		$lock_age     = 0;
 		$lock         = self::get_lock();
 		if ( null !== $lock ) {
-			$state = self::lock_state( $lock, microtime( true ), self::lock_timeout() );
-			if ( 'stale' === $state['state'] ) {
-				delete_transient( 'doing_cron' );
-				$lock_cleared = true;
-			} else {
-				$lock_fresh = true;
-			}
+			$lock_age = (int) round( microtime( true ) - $lock );
+			delete_transient( 'doing_cron' );
+			$lock_cleared = true;
 		}
 
 		$id   = wp_generate_password( 12, false, false );
@@ -715,7 +738,7 @@ final class Cron_Health_Check {
 			'reason'        => null,
 			'spawn'         => null,
 			'lock_cleared'  => $lock_cleared,
-			'lock_fresh'    => $lock_fresh,
+			'lock_age'      => $lock_age,
 		);
 		update_option( self::OPTION, $test, false );
 
@@ -761,8 +784,8 @@ final class Cron_Health_Check {
 	 * @return array
 	 */
 	public function filter_cron_request( $request ) {
-		$request['blocking'] = true;
-		$request['timeout']  = 5;
+		$request['args']['blocking'] = true;
+		$request['args']['timeout']  = 5;
 		return $request;
 	}
 
@@ -805,9 +828,10 @@ final class Cron_Health_Check {
 			&& null === ( $test['fired'] ?? null )
 			&& ( time() - (int) $test['started'] ) > self::test_timeout()
 		) {
+			$spawn           = ( isset( $test['spawn'] ) && is_array( $test['spawn'] ) ) ? $test['spawn'] : null;
 			$test['status']  = 'failed';
-			$test['reason']  = 'timeout';
-			$test['message'] = __( 'The event was scheduled but never ran. Check the diagnostics below for the likely cause.', 'cron-health-check' );
+			$test['reason']  = self::timeout_reason( $spawn );
+			$test['message'] = self::timeout_message( $spawn, self::test_timeout() );
 			update_option( self::OPTION, $test, false );
 		}
 
@@ -1105,9 +1129,12 @@ final class Cron_Health_Check {
 		if ( 'failed' === $status ) {
 			$message = $test['message'] ?? '';
 			if ( '' === $message ) {
-				$message = 'timeout' === $reason
-					? __( 'The event was scheduled but never ran.', 'cron-health-check' )
-					: __( 'The test failed.', 'cron-health-check' );
+				if ( null !== $reason && 0 === strpos( $reason, 'timeout' ) ) {
+					$spawn   = ( isset( $test['spawn'] ) && is_array( $test['spawn'] ) ) ? $test['spawn'] : null;
+					$message = self::timeout_message( $spawn, $timeout );
+				} else {
+					$message = __( 'The test failed.', 'cron-health-check' );
+				}
 			}
 			return array(
 				'status'   => 'failed',
@@ -1118,10 +1145,11 @@ final class Cron_Health_Check {
 		}
 
 		if ( $started > 0 && ( $now - $started ) > $timeout ) {
+			$spawn = ( isset( $test['spawn'] ) && is_array( $test['spawn'] ) ) ? $test['spawn'] : null;
 			return array(
 				'status'   => 'failed',
-				'reason'   => 'timeout',
-				'message'  => __( 'The event was scheduled but never ran.', 'cron-health-check' ),
+				'reason'   => self::timeout_reason( $spawn ),
+				'message'  => self::timeout_message( $spawn, $timeout ),
 				'duration' => null,
 			);
 		}
@@ -1132,6 +1160,68 @@ final class Cron_Health_Check {
 			'message'  => __( 'The test is running.', 'cron-health-check' ),
 			'duration' => null,
 		);
+	}
+
+	/**
+	 * Derive a timeout sub-reason from the captured spawn result.
+	 *
+	 * @param array|null $spawn Spawn record or null when no request was made.
+	 * @return string
+	 */
+	public static function timeout_reason( ?array $spawn ): string {
+		if ( null === $spawn ) {
+			return 'timeout_no_request';
+		}
+		if ( ! empty( $spawn['error'] ) ) {
+			return 'timeout_loopback_error';
+		}
+		if ( ! empty( $spawn['code'] ) ) {
+			return (int) $spawn['code'] >= 400 ? 'timeout_http_error' : 'timeout_no_fire';
+		}
+		if ( ! empty( $spawn['alternate'] ) ) {
+			return 'timeout_no_fire';
+		}
+		return 'timeout_no_request';
+	}
+
+	/**
+	 * Build a specific timeout failure message from the captured spawn result.
+	 *
+	 * @param array|null $spawn   Spawn record or null when no request was made.
+	 * @param int        $timeout Seconds waited for the event to fire.
+	 * @return string
+	 */
+	public static function timeout_message( ?array $spawn, int $timeout ): string {
+		if ( null !== $spawn && ! empty( $spawn['error'] ) ) {
+			return sprintf(
+				/* translators: %s: HTTP error message. */
+				__( 'The loopback request to wp-cron.php failed: %s. WordPress cannot reach its own site URL, so scheduled events never run. Check SSL, HTTP basic auth, DNS, and firewall or loopback blocking for the site URL.', 'cron-health-check' ),
+				$spawn['error']
+			);
+		}
+		if ( null !== $spawn && ! empty( $spawn['code'] ) && (int) $spawn['code'] >= 400 ) {
+			return sprintf(
+				/* translators: %d: HTTP status code. */
+				__( 'The loopback request to wp-cron.php returned HTTP %d, so scheduled events never run.', 'cron-health-check' ),
+				(int) $spawn['code']
+			);
+		}
+		if ( null !== $spawn && ! empty( $spawn['code'] ) ) {
+			return sprintf(
+				/* translators: 1: HTTP status code, 2: timeout in seconds. */
+				__( 'wp-cron.php responded (HTTP %1$d) but the test event never ran within %2$ds. Cron may be very slow, or another plugin may be interfering.', 'cron-health-check' ),
+				(int) $spawn['code'],
+				$timeout
+			);
+		}
+		if ( null !== $spawn && ! empty( $spawn['alternate'] ) ) {
+			return sprintf(
+				/* translators: %d: timeout in seconds. */
+				__( 'The test event did not run within %ds. ALTERNATE_WP_CRON only fires on front-end page loads — a low-traffic site may need more time.', 'cron-health-check' ),
+				$timeout
+			);
+		}
+		return __( 'spawn_cron() did not make a request.', 'cron-health-check' );
 	}
 
 	/**

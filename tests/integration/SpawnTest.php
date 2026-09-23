@@ -82,6 +82,7 @@ final class SpawnTest extends WP_UnitTestCase {
 		// supported way to override it in tests.
 		add_filter( 'chc_cron_disabled', '__return_false' );
 		delete_option( Cron_Health_Check::OPTION );
+		set_transient( 'doing_cron', microtime( true ) ); // Fresh lock must be cleared too.
 
 		$test = Cron_Health_Check::instance()->run_test();
 
@@ -90,6 +91,8 @@ final class SpawnTest extends WP_UnitTestCase {
 		$this->assertIsArray( $test );
 		$this->assertArrayHasKey( 'spawn', $test );
 		$this->assertNotEmpty( $test['id'] );
+		$this->assertTrue( $test['lock_cleared'] );
+		$this->assertArrayHasKey( 'lock_age', $test );
 		$this->assertNotFalse( wp_next_scheduled( Cron_Health_Check::TEST_HOOK, array( $test['id'] ) ) );
 		// If the spawned process fired the event before spawn_cron() returned,
 		// the merge must have preserved it.
@@ -192,6 +195,6 @@ final class SpawnTest extends WP_UnitTestCase {
 		);
 
 		$this->assertSame( 'failed', $summary['status'] );
-		$this->assertSame( 'timeout', $summary['reason'] );
+		$this->assertSame( 'timeout_no_request', $summary['reason'] );
 	}
 }
