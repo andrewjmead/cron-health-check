@@ -116,8 +116,7 @@
 		stopPolling();
 		var waiting = stepEl( 'waiting' );
 		var wasActive = waiting && waiting.classList.contains( 'is-active' );
-		if ( test && ( test.status === 'passed' || test.reason === 'overdue' ) ) {
-			// Overdue failures still fired, so waiting stays green.
+		if ( test && test.status === 'passed' ) {
 			setStep( 'waiting', 'done', firedText( test ) );
 		} else if ( wasActive && test && test.status === 'failed' ) {
 			setStep( 'waiting', 'failed', test.message || t( 'failed' ) );
@@ -190,21 +189,28 @@
 			list.push( {
 				step: 'overdue',
 				state: 'failed',
-				text: fmt( t( 'overdueSome' ), overdue, Math.round( ( Number( test.overdue_oldest ) || 0 ) / 60 ) )
+				text: fmt( t( 'overdueSome' ), overdue, Math.round( ( Number( test.overdue_oldest ) || 0 ) / 60 ) ),
+				stop: true
 			} );
-		} else {
-			list.push( { step: 'overdue', state: 'done', text: t( 'overdueNone' ) } );
+			return list;
 		}
+		list.push( { step: 'overdue', state: 'done', text: t( 'overdueNone' ) } );
 
+		if ( 'schedule' === reason ) {
+			list.push( { step: 'scheduled', state: 'failed', text: test.message || t( 'scheduleFailed' ), stop: true } );
+			return list;
+		}
 		list.push( { step: 'scheduled', state: 'done', text: t( 'scheduledOk' ) } );
 
 		var spawn = test.spawn;
 		if ( spawn && spawn.alternate ) {
 			list.push( { step: 'spawning', state: 'done', text: t( 'spawnAlternate' ) } );
 		} else if ( spawn && spawn.error ) {
-			list.push( { step: 'spawning', state: 'failed', text: String( spawn.error ), stop: true } );
+			var errorText = ( 'spawn' === reason && test.message ) ? test.message : String( spawn.error );
+			list.push( { step: 'spawning', state: 'failed', text: errorText, stop: true } );
 		} else if ( spawn && spawn.code >= 400 ) {
-			list.push( { step: 'spawning', state: 'failed', text: fmt( t( 'spawnHttpError' ), spawn.code ), stop: true } );
+			var httpText = ( 'spawn' === reason && test.message ) ? test.message : fmt( t( 'spawnHttpError' ), spawn.code );
+			list.push( { step: 'spawning', state: 'failed', text: httpText, stop: true } );
 		} else {
 			list.push( { step: 'spawning', state: 'done', text: spawn && spawn.code ? fmt( t( 'spawnOk' ), spawn.code ) : t( 'spawnSent' ) } );
 		}

@@ -85,6 +85,10 @@ final class SpawnTest extends WP_UnitTestCase {
 		delete_option( Cron_Health_Check::OPTION );
 		set_transient( 'doing_cron', microtime( true ) ); // Fresh lock must be cleared too.
 
+		// No pre-existing events, so the overdue check passes and we reach scheduling.
+		$cron = _get_cron_array();
+		_set_cron_array( array() );
+
 		$test = Cron_Health_Check::instance()->run_test();
 
 		remove_filter( 'chc_cron_disabled', '__return_false' );
@@ -101,39 +105,72 @@ final class SpawnTest extends WP_UnitTestCase {
 			$this->assertNotNull( $test['fired'] );
 			$this->assertNotNull( $test['duration'] );
 		} else {
-			$this->assertSame( 'running', $test['status'] );
+			// A broken loopback fails the spawn step immediately.
+			$this->assertContains( $test['status'], array( 'running', 'failed' ) );
+			if ( 'failed' === $test['status'] ) {
+				$this->assertSame( 'spawn', $test['reason'] );
+			}
 		}
+
+		// Restore the pre-existing cron array (the test event is cleared by tear_down).
+		wp_clear_scheduled_hook( Cron_Health_Check::TEST_HOOK );
+		_set_cron_array( $cron );
 	}
 
 	/**
-	 * A fired test still fails when an event is overdue by more than 30 minutes.
+	 * An event overdue by more than 30 minutes fails the check before the
+	 * test event is ever scheduled.
 	 */
-	public function test_fired_but_overdue_events_fail_the_test() {
+	public function test_overdue_events_fail_before_scheduling() {
 		add_filter( 'chc_cron_disabled', '__return_false' );
 
 		// Schedule a bogus event far past the 30-minute grace before the run
 		// snapshots the overdue count.
 		wp_schedule_single_event( time() - 2 * HOUR_IN_SECONDS, 'chc_bogus_overdue' );
 
-		$instance = Cron_Health_Check::instance();
-		$test     = $instance->run_test();
-
-		// Fire the test event as the spawned process would.
-		do_action( Cron_Health_Check::TEST_HOOK, $test['id'] );
-
-		$stored = get_option( Cron_Health_Check::OPTION );
-		$this->assertSame( 'passed', $stored['status'] );
-
-		// The verdict is applied when a final record is produced.
-		$final = $instance->finalize_test( $stored );
+		$test = Cron_Health_Check::instance()->run_test();
 
 		remove_filter( 'chc_cron_disabled', '__return_false' );
 		wp_clear_scheduled_hook( 'chc_bogus_overdue' );
 
-		$this->assertSame( 'failed', $final['status'] );
-		$this->assertSame( 'overdue', $final['reason'] );
-		$this->assertSame( 1, $final['overdue'] );
-		$this->assertGreaterThan( 2 * HOUR_IN_SECONDS - 1, $final['overdue_oldest'] );
+		$this->assertSame( 'failed', $test['status'] );
+		$this->assertSame( 'overdue', $test['reason'] );
+		$this->assertGreaterThanOrEqual( 1, $test['overdue'] );
+		$this->assertGreaterThan( 2 * HOUR_IN_SECONDS - 1, $test['overdue_oldest'] );
+		$this->assertFalse( wp_next_scheduled( Cron_Health_Check::TEST_HOOK, array( $test['id'] ) ) );
+
+		$stored = get_option( Cron_Health_Check::OPTION );
+		$this->assertSame( 'failed', $stored['status'] );
+		$this->assertSame( 'overdue', $stored['reason'] );
+	}
+
+	/**
+	 * WordPress refusing to schedule the event fails the check at the
+	 * scheduled step with reason 'schedule'.
+	 */
+	public function test_schedule_refusal_fails_before_spawning() {
+		add_filter( 'chc_cron_disabled', '__return_false' );
+
+		// No pre-existing events so the overdue check passes and we reach scheduling.
+		$cron = _get_cron_array();
+		_set_cron_array( array() );
+
+		$block = function () {
+			return new WP_Error( 'chc_test_block', 'nope' );
+		};
+		add_filter( 'pre_schedule_event', $block );
+
+		$test = Cron_Health_Check::instance()->run_test();
+
+		remove_filter( 'pre_schedule_event', $block );
+		remove_filter( 'chc_cron_disabled', '__return_false' );
+		_set_cron_array( $cron );
+
+		$this->assertSame( 'failed', $test['status'] );
+		$this->assertSame( 'schedule', $test['reason'] );
+		$this->assertStringContainsString( 'nope', $test['message'] );
+		$this->assertNull( $test['spawn'] );
+		$this->assertFalse( wp_next_scheduled( Cron_Health_Check::TEST_HOOK, array( $test['id'] ) ) );
 	}
 
 	/**
@@ -141,6 +178,10 @@ final class SpawnTest extends WP_UnitTestCase {
 	 */
 	public function test_fired_no_overdue_passes() {
 		add_filter( 'chc_cron_disabled', '__return_false' );
+
+		// Empty the cron array so no pre-existing events trip the overdue check.
+		$cron = _get_cron_array();
+		_set_cron_array( array() );
 
 		$instance = Cron_Health_Check::instance();
 		$test     = $instance->run_test();
@@ -150,22 +191,10 @@ final class SpawnTest extends WP_UnitTestCase {
 		$final  = $instance->finalize_test( $stored );
 
 		remove_filter( 'chc_cron_disabled', '__return_false' );
+		_set_cron_array( $cron );
 
-		$expected = count(
-			Cron_Health_Check::partition_overdue(
-				Cron_Health_Check::get_event_rows(),
-				time(),
-				Cron_Health_Check::OVERDUE_GRACE
-			)['overdue']
-		);
-
-		$this->assertSame( $expected, $final['overdue'] );
-		if ( 0 === $expected ) {
-			$this->assertSame( 'passed', $final['status'] );
-			$this->assertSame( 0, $final['overdue'] );
-		} else {
-			$this->assertSame( 'overdue', $final['reason'] );
-		}
+		$this->assertSame( 'passed', $final['status'] );
+		$this->assertSame( 0, $final['overdue'] );
 	}
 
 	/**
