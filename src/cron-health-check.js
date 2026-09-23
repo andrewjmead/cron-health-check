@@ -176,7 +176,7 @@
 			list.push( {
 				step: 'overdue',
 				state: 'failed',
-				text: fmt( t( 'overdueSome' ), overdue, Math.round( ( Number( test.overdue_oldest ) || 0 ) / 60 ) ),
+				text: fmt( t( 'overdueSome' ), overdue ),
 				stop: true
 			} );
 			return list;

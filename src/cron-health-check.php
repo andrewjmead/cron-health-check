@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       Cron Health Check
  * Plugin URI:        https://github.com/andrewjmead/cron-health-check
- * Description:       Manually test whether WP-Cron fires on this site and inspect overdue scheduled events.
+ * Description:       Check that WP-Cron is working correctly on your WordPress website
  * Version:           1.0.0
  * Requires at least: 6.0
  * Requires PHP:      7.4
@@ -220,21 +220,21 @@ final class Cron_Health_Check {
 					'passedTitle'       => self::result_title( 'passed' ),
 					'failedTitle'       => self::result_title( 'failed' ),
 					'requestFailed'     => __( 'Request failed. Check your connection and try again.', 'cron-health-check' ),
-					'couldNotStart'     => __( 'Could not start the test.', 'cron-health-check' ),
+					'couldNotStart'     => __( 'Failed to schedule a test cron event.', 'cron-health-check' ),
 					'timeout'           => __( 'The event was scheduled but never ran.', 'cron-health-check' ),
 					/* translators: 1: duration in seconds, 2: trigger source. */
 					'firedIn'           => __( 'Cron fired in %1$ss via %2$s.', 'cron-health-check' ),
 					/* translators: %s: duration in seconds. */
 					'firedInNoSource'   => __( 'Cron fired in %ss.', 'cron-health-check' ),
 					'neverRan'          => __( 'The event was scheduled but never ran.', 'cron-health-check' ),
-					'disabledUndefined' => __( 'DISABLE_WP_CRON is not defined, so WordPress will trigger cron itself.', 'cron-health-check' ),
-					'disabledFalse'     => __( 'DISABLE_WP_CRON is set to false, so WordPress will trigger cron itself.', 'cron-health-check' ),
-					'disabledTrue'      => __( 'DISABLE_WP_CRON is set to true. WordPress will never trigger scheduled events; a system cron must call wp-cron.php.', 'cron-health-check' ),
-					'overdueNone'       => __( 'No cron events are more than 30 minutes overdue.', 'cron-health-check' ),
-					/* translators: 1: overdue event count, 2: minutes the oldest event is late. */
-					'overdueSome'       => __( '%1$s cron event(s) are more than 30 minutes overdue (oldest: %2$s min).', 'cron-health-check' ),
-					'scheduledOk'       => __( 'Scheduled a one-off test event.', 'cron-health-check' ),
-					'scheduleFailed'    => __( 'Could not schedule the test event.', 'cron-health-check' ),
+					'disabledUndefined' => __( 'The option DISABLE_WP_CRON is not defined. WP-Cron is enabled.', 'cron-health-check' ),
+					'disabledFalse'     => __( 'The option DISABLE_WP_CRON is set to false. WP-Cron is enabled.', 'cron-health-check' ),
+					'disabledTrue'      => __( 'The option DISABLE_WP_CRON is set to true. WP-Cron is disabled and WordPress will not be able to run cron events.', 'cron-health-check' ),
+					'overdueNone'       => __( 'No overdue cron events were found.', 'cron-health-check' ),
+					/* translators: %s: overdue event count. */
+					'overdueSome'       => __( 'There are %s cron event(s) that are more than 30 minutes overdue. WP-Cron is not working.', 'cron-health-check' ),
+					'scheduledOk'       => __( 'Scheduled a test cron event.', 'cron-health-check' ),
+					'scheduleFailed'    => __( 'Failed to schedule a test cron event.', 'cron-health-check' ),
 					/* translators: %s: HTTP status code. */
 					'spawnOk'           => __( 'spawn_cron() sent the loopback request to wp-cron.php (HTTP %s).', 'cron-health-check' ),
 					'spawnSent'         => __( 'spawn_cron() sent the loopback request to wp-cron.php.', 'cron-health-check' ),
@@ -271,17 +271,17 @@ final class Cron_Health_Check {
 				</header>
 
 				<button type="button" id="chc-run-test" class="chc-button">
-					<?php esc_html_e( 'Run Cron Health Check', 'cron-health-check' ); ?>
+					<?php esc_html_e( 'Run Health Check', 'cron-health-check' ); ?>
 				</button>
 
 				<ol class="chc-stepper" id="chc-stepper">
 					<?php
 					$steps = array(
-						'enabled'   => array( __( 'Checking that WP-Cron is enabled', 'cron-health-check' ), '<path d="M12 2v10"/><path d="M18.4 6.6a9 9 0 1 1-12.77.04"/>' ),
-						'overdue'   => array( __( 'Checking for overdue cron events', 'cron-health-check' ), '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>' ),
-						'scheduled' => array( __( 'Scheduling a test cron event', 'cron-health-check' ), '<path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/>' ),
-						'spawning'  => array( __( 'Attempting to run test event', 'cron-health-check' ), '<path d="M6 4.5v15a1 1 0 0 0 1.5.86l12-7.5a1 1 0 0 0 0-1.72l-12-7.5A1 1 0 0 0 6 4.5z"/>' ),
-						'waiting'   => array( __( 'Waiting for test cron event to fire', 'cron-health-check' ), '<path d="M5 22h14"/><path d="M5 2h14"/><path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22"/><path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"/>' ),
+						'enabled'   => array( __( 'Check that WP-Cron is enabled', 'cron-health-check' ), '<path d="M12 2v10"/><path d="M18.4 6.6a9 9 0 1 1-12.77.04"/>' ),
+						'overdue'   => array( __( 'Check for overdue cron events', 'cron-health-check' ), '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>' ),
+						'scheduled' => array( __( 'Schedule a test cron event', 'cron-health-check' ), '<path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/>' ),
+						'spawning'  => array( __( 'Attempt to run the test cron event', 'cron-health-check' ), '<path d="M6 4.5v15a1 1 0 0 0 1.5.86l12-7.5a1 1 0 0 0 0-1.72l-12-7.5A1 1 0 0 0 6 4.5z"/>' ),
+						'waiting'   => array( __( 'Confirm the test cron event fired', 'cron-health-check' ), '<path d="M5 22h14"/><path d="M5 2h14"/><path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22"/><path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"/>' ),
 					);
 					$n     = 0;
 					foreach ( $steps as $key => $step ) :
