@@ -216,10 +216,10 @@ final class Cron_Health_Check {
 				'altCron' => self::is_alternate_cron(),
 				'homeUrl' => home_url( '/' ),
 				'i18n'    => array(
-					'passed'            => __( 'Passed', 'cron-health-check' ),
 					'failed'            => __( 'Failed', 'cron-health-check' ),
-					'running'           => __( 'Running', 'cron-health-check' ),
-					'unknown'           => __( 'Unknown', 'cron-health-check' ),
+					'passedTitle'       => self::result_title( 'passed' ),
+					'failedTitle'       => self::result_title( 'failed' ),
+					'passedMessage'     => self::passed_message(),
 					'requestFailed'     => __( 'Request failed. Check your connection and try again.', 'cron-health-check' ),
 					'couldNotStart'     => __( 'Could not start the test.', 'cron-health-check' ),
 					'timeout'           => __( 'The event was scheduled but never ran.', 'cron-health-check' ),
@@ -228,11 +228,6 @@ final class Cron_Health_Check {
 					/* translators: %s: duration in seconds. */
 					'firedInNoSource'   => __( 'Cron fired in %ss.', 'cron-health-check' ),
 					'neverRan'          => __( 'The event was scheduled but never ran.', 'cron-health-check' ),
-					'isRunning'         => __( 'The test is running.', 'cron-health-check' ),
-					'duration'          => __( 'Duration', 'cron-health-check' ),
-					'source'            => __( 'Source', 'cron-health-check' ),
-					'loopback'          => __( 'Loopback', 'cron-health-check' ),
-					'overdue'           => __( 'Overdue events (>30 min)', 'cron-health-check' ),
 					'disabledUndefined' => __( 'DISABLE_WP_CRON is not defined, so WordPress will trigger cron itself.', 'cron-health-check' ),
 					'disabledFalse'     => __( 'DISABLE_WP_CRON is set to false, so WordPress will trigger cron itself.', 'cron-health-check' ),
 					'disabledTrue'      => __( 'DISABLE_WP_CRON is set to true. WordPress will never trigger scheduled events; a system cron must call wp-cron.php.', 'cron-health-check' ),
@@ -288,7 +283,7 @@ final class Cron_Health_Check {
 					<li class="chc-step" data-step="waiting"><span class="chc-dot"><span class="chc-step-num">5</span></span><span class="chc-step-body"><span class="chc-step-label"><?php esc_html_e( 'Waiting for test cron event to fire', 'cron-health-check' ); ?></span><span class="chc-step-status" data-status></span></span></li>
 				</ol>
 
-				<div id="chc-result" class="chc-result" aria-live="polite"><?php $this->render_result( $summary, null ); ?></div>
+				<div id="chc-result" class="chc-result" aria-live="polite"><?php $this->render_result( $summary ); ?></div>
 
 				<?php if ( 'stale' === $lock['state'] ) : ?>
 					<p class="chc-lock-action">
@@ -322,82 +317,37 @@ final class Cron_Health_Check {
 	/**
 	 * Render the result card contents (also used as the page-load default).
 	 *
-	 * @param array      $summary Result of summarize_test().
-	 * @param array|null $test    Stored test option.
+	 * @param array $summary Result of summarize_test().
 	 */
-	private function render_result( array $summary, $test ) {
-		if ( 'none' === $summary['status'] ) {
+	private function render_result( array $summary ) {
+		if ( ! in_array( $summary['status'], array( 'passed', 'failed' ), true ) ) {
 			return;
 		}
+		$message = 'passed' === $summary['status'] ? self::passed_message() : $summary['message'];
 		?>
 		<div class="chc-result-card chc-status-<?php echo esc_attr( $summary['status'] ); ?>">
-			<strong class="chc-result-status"><?php echo esc_html( self::status_label( $summary['status'] ) ); ?></strong>
-			<p class="chc-result-message"><?php echo esc_html( $summary['message'] ); ?></p>
-			<dl class="chc-result-meta">
-				<?php if ( in_array( $summary['status'], array( 'passed', 'failed' ), true ) ) : ?>
-					<?php $overdue_count = ( is_array( $test ) && isset( $test['overdue'] ) ) ? (int) $test['overdue'] : 0; ?>
-					<div><dt><?php esc_html_e( 'Overdue events (>30 min)', 'cron-health-check' ); ?></dt>
-						<dd class="chc-overdue-count<?php echo $overdue_count > 0 ? ' chc-fail' : ''; ?>"><?php echo esc_html( (string) $overdue_count ); ?></dd></div>
-				<?php endif; ?>
-				<?php if ( null !== $summary['duration'] ) : ?>
-					<div><dt><?php esc_html_e( 'Duration', 'cron-health-check' ); ?></dt><dd>
-					<?php
-					/* translators: %s: number of seconds. */
-					printf( esc_html__( '%ss', 'cron-health-check' ), esc_html( number_format_i18n( (float) $summary['duration'], 1 ) ) );
-					?>
-					</dd></div>
-				<?php endif; ?>
-				<?php if ( is_array( $test ) && ! empty( $test['source'] ) ) : ?>
-					<div><dt><?php esc_html_e( 'Source', 'cron-health-check' ); ?></dt><dd><?php echo esc_html( $test['source'] ); ?></dd></div>
-				<?php endif; ?>
-			</dl>
-			<?php $spawn = ( is_array( $test ) && isset( $test['spawn'] ) && is_array( $test['spawn'] ) ) ? $test['spawn'] : null; ?>
-			<?php if ( 'failed' === $summary['status'] && null !== $spawn ) : ?>
-				<p class="chc-spawn-detail">
-					<?php esc_html_e( 'Loopback', 'cron-health-check' ); ?>:
-					<code><?php echo esc_html( self::spawn_detail( $spawn ) ); ?></code>
-				</p>
-			<?php endif; ?>
+			<strong class="chc-result-status"><?php echo esc_html( self::result_title( $summary['status'] ) ); ?></strong>
+			<p class="chc-result-message"><?php echo esc_html( $message ); ?></p>
 		</div>
 		<?php
 	}
 
 	/**
-	 * One-line summary of a captured spawn result.
+	 * Heading for the result card.
 	 *
-	 * @param array $spawn Spawn record.
-	 * @return string
+	 * @param string $status 'passed' or 'failed'.
 	 */
-	public static function spawn_detail( array $spawn ): string {
-		if ( ! empty( $spawn['alternate'] ) ) {
-			return 'ALTERNATE_WP_CRON';
-		}
-		if ( ! empty( $spawn['error'] ) ) {
-			return $spawn['error'];
-		}
-		if ( ! empty( $spawn['code'] ) ) {
-			return sprintf( 'HTTP %d', (int) $spawn['code'] );
-		}
-		return __( 'no request recorded', 'cron-health-check' );
+	public static function result_title( string $status ): string {
+		return 'passed' === $status
+			? __( 'Health check passed', 'cron-health-check' )
+			: __( 'Health check failed', 'cron-health-check' );
 	}
 
 	/**
-	 * Human-readable status label.
-	 *
-	 * @param string $status Status key.
-	 * @return string
+	 * Static message shown when every step passed.
 	 */
-	public static function status_label( string $status ): string {
-		switch ( $status ) {
-			case 'passed':
-				return __( 'Passed', 'cron-health-check' );
-			case 'failed':
-				return __( 'Failed', 'cron-health-check' );
-			case 'running':
-				return __( 'Running', 'cron-health-check' );
-			default:
-				return __( 'Unknown', 'cron-health-check' );
-		}
+	public static function passed_message(): string {
+		return __( 'WP-Cron is enabled, no events are overdue, and a test event was scheduled and actually ran on this site.', 'cron-health-check' );
 	}
 
 	// ---------------------------------------------------------------------

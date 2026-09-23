@@ -92,7 +92,7 @@
 .chc-stepper {
 	display: flex;
 	flex-direction: column;
-	gap: 14px;
+	gap: 8px;
 	list-style: none;
 	margin: 32px 0 0;
 	padding: 0;
@@ -228,41 +228,33 @@
 
 /* Result card */
 .chc-result-card {
-	border: 1px solid #e5e5e5;
+	border: 1px solid;
+	border-bottom-width: 3px;
 	border-radius: 6px;
 	padding: 16px 20px;
-	background: #fff;
+	color: #1a1a1a;
+}
+
+.chc-result-card.chc-status-passed {
+	background: #e8f5ec;
+	border-color: #1e8e3e;
+}
+
+.chc-result-card.chc-status-failed {
+	background: #fbeae8;
+	border-color: #b3261e;
 }
 
 .chc-result-status {
+	display: block;
 	font-size: 15px;
+	line-height: 1.3;
 }
-
-.chc-result-card.chc-status-passed .chc-result-status { color: #1e8e3e; }
-.chc-result-card.chc-status-failed .chc-result-status { color: #b3261e; }
-.chc-result-card.chc-status-running .chc-result-status { color: #b26a00; }
 
 .chc-result-message {
-	margin: 6px 0;
+	margin: 4px 0 0;
 	font-size: 14px;
-}
-
-.chc-result-meta {
-	display: flex;
-	gap: 24px;
-	margin: 8px 0 0;
-	font-size: 12px;
-	color: #6a6a6a;
-}
-
-.chc-result-meta dt {
-	font-weight: 700;
-	display: inline;
-}
-
-.chc-result-meta dd {
-	display: inline;
-	margin: 0 0 0 4px;
+	line-height: 1.5;
 }
 
 .chc-lock-action {

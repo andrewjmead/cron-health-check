@@ -78,13 +78,6 @@
 		return div.innerHTML;
 	}
 
-	function statusLabel( status ) {
-		if ( status === 'passed' ) { return t( 'passed' ); }
-		if ( status === 'failed' ) { return t( 'failed' ); }
-		if ( status === 'running' ) { return t( 'running' ); }
-		return t( 'unknown' );
-	}
-
 	function firedText( test ) {
 		var dur = test.duration != null ? Number( test.duration ).toFixed( 1 ) : '0.0';
 		if ( test.source ) {
@@ -93,60 +86,34 @@
 		return fmt( t( 'firedInNoSource' ), dur );
 	}
 
-	function messageFor( test ) {
-		if ( test.message ) { return test.message; }
-		if ( test.status === 'passed' ) {
-			return firedText( test );
+	// The failed step's label + status line, or the test message as a fallback.
+	function failureDetail( test ) {
+		var failed = document.querySelector( '#chc-stepper .chc-step.is-failed' );
+		if ( failed ) {
+			var label = failed.querySelector( '.chc-step-label' );
+			var status = failed.querySelector( '.chc-step-status' );
+			var text = ( label ? label.textContent : '' ) + ( status && status.textContent ? ': ' + status.textContent : '' );
+			if ( text ) { return text; }
 		}
-		if ( test.status === 'failed' ) {
-			return t( 'neverRan' );
-		}
-		return t( 'isRunning' );
+		return ( test && test.message ) || t( 'neverRan' );
 	}
 
 	function render( test ) {
 		if ( ! result ) { return; }
-		if ( ! test || test.status === 'none' ) {
+		if ( ! test || ( test.status !== 'passed' && test.status !== 'failed' ) ) {
 			result.innerHTML = '';
 			return;
 		}
-		var meta = '';
-		if ( test.status === 'passed' || test.status === 'failed' ) {
-			var overdueCount = test.overdue != null ? Number( test.overdue ) : 0;
-			meta += '<div><dt>' + esc( t( 'overdue' ) ) + '</dt><dd class="chc-overdue-count' + ( overdueCount > 0 ? ' chc-fail' : '' ) + '">' + esc( overdueCount ) + '</dd></div>';
-		}
-		if ( test.duration != null ) {
-			meta += '<div><dt>' + esc( t( 'duration' ) ) + '</dt><dd>' + esc( Number( test.duration ).toFixed( 1 ) ) + 's</dd></div>';
-		}
-		if ( test.source ) {
-			meta += '<div><dt>' + esc( t( 'source' ) ) + '</dt><dd>' + esc( test.source ) + '</dd></div>';
-		}
-		var spawnLine = '';
-		if ( test.status === 'failed' && test.spawn ) {
-			var detail = '';
-			if ( test.spawn.error ) {
-				detail = test.spawn.error;
-			} else if ( test.spawn.code ) {
-				detail = 'HTTP ' + test.spawn.code;
-			} else if ( test.spawn.alternate ) {
-				detail = 'ALTERNATE_WP_CRON';
-			}
-			if ( detail ) {
-				spawnLine = '<p class="chc-spawn-detail">' + esc( t( 'loopback' ) ) + ': <code>' + esc( detail ) + '</code></p>';
-			}
-		}
+		var passed = test.status === 'passed';
 		result.innerHTML =
-			'<div class="chc-result-card chc-status-' + esc( test.status ) + '">' +
-				'<strong class="chc-result-status">' + esc( statusLabel( test.status ) ) + '</strong>' +
-				'<p class="chc-result-message">' + esc( messageFor( test ) ) + '</p>' +
-				( meta ? '<dl class="chc-result-meta">' + meta + '</dl>' : '' ) +
-				spawnLine +
+			'<div class="chc-result-card chc-status-' + ( passed ? 'passed' : 'failed' ) + '">' +
+				'<strong class="chc-result-status">' + esc( t( passed ? 'passedTitle' : 'failedTitle' ) ) + '</strong>' +
+				'<p class="chc-result-message">' + esc( passed ? t( 'passedMessage' ) : failureDetail( test ) ) + '</p>' +
 			'</div>';
 	}
 
 	function finish( test ) {
 		stopPolling();
-		render( test );
 		var waiting = stepEl( 'waiting' );
 		var wasActive = waiting && waiting.classList.contains( 'is-active' );
 		if ( test && ( test.status === 'passed' || test.reason === 'overdue' ) ) {
@@ -155,6 +122,7 @@
 		} else if ( wasActive && test && test.status === 'failed' ) {
 			setStep( 'waiting', 'failed', test.message || t( 'failed' ) );
 		}
+		render( test );
 		setRunning( false );
 		refreshSections();
 	}
