@@ -7,3 +7,5 @@ package-lock.json
 .phpcs-cache
 phpstan-cache/
 .wp-env.override.json
+||||||| f4a93e4
+.idea/
