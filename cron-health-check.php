@@ -257,7 +257,7 @@ final class Cron_Health_Check {
 				<?php endif; ?>
 			</section>
 
-			<button type="button" id="chc-show-diagnostics" class="chc-link-button"><?php esc_html_e( 'Show Advanced Diagnostics', 'cron-health-check' ); ?></button>
+			<button type="button" id="chc-show-diagnostics" class="chc-link-button"><?php esc_html_e( 'Show advanced diagnostics', 'cron-health-check' ); ?></button>
 			<section class="chc-card chc-diagnostics-card" id="chc-diagnostics-card" hidden>
 				<h2><?php esc_html_e( 'Diagnostics', 'cron-health-check' ); ?></h2>
 				<ul class="chc-diagnostics">

@@ -5,8 +5,12 @@
 }
 
 .chc-header {
-	padding: 0;
+	padding: 24px;
 	margin: 16px 0 24px;
+	background: #fff;
+	border: 1px solid #e5e5e5;
+	border-bottom-width: 3px;
+	border-radius: 8px;
 }
 
 .chc-header h1 {
@@ -19,6 +23,7 @@
 .chc-card {
 	background: #fff;
 	border: 1px solid #e5e5e5;
+	border-bottom-width: 3px;
 	border-radius: 8px;
 	padding: 24px;
 	margin-bottom: 24px;
@@ -64,10 +69,11 @@
 }
 
 .chc-link-button {
+	display: block;
 	background: none;
 	border: 0;
 	padding: 0;
-	margin: 0 0 24px;
+	margin: 0 auto 24px;
 	color: #8a8a8a;
 	font-size: 12px;
 	cursor: pointer;
