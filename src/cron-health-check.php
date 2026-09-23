@@ -47,6 +47,13 @@ final class Cron_Health_Check {
 	const OVERDUE_GRACE = 1800;
 
 	/**
+	 * Transient that triggers the post-activation redirect.
+	 *
+	 * @var string
+	 */
+	const REDIRECT_TRANSIENT = 'chc_activation_redirect';
+
+	/**
 	 * Singleton instance.
 	 *
 	 * @var Cron_Health_Check|null
@@ -79,6 +86,7 @@ final class Cron_Health_Check {
 		add_action( 'admin_menu', array( $this, 'admin_menu' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
 		add_action( 'in_admin_header', array( $this, 'remove_admin_notices' ), 1000 );
+		add_action( 'admin_init', array( $this, 'maybe_activation_redirect' ) );
 		add_action( 'wp_ajax_chc_start_test', array( $this, 'ajax_start_test' ) );
 		add_action( 'wp_ajax_chc_test_status', array( $this, 'ajax_test_status' ) );
 		add_action( 'wp_ajax_chc_clear_lock', array( $this, 'ajax_clear_lock' ) );
@@ -1084,6 +1092,37 @@ final class Cron_Health_Check {
 	// ---------------------------------------------------------------------
 
 	/**
+	 * Activation: flag a one-time redirect to the tool page.
+	 *
+	 * @param bool $network_wide Whether the plugin is being network-activated.
+	 */
+	public static function activate( $network_wide = false ) {
+		if ( $network_wide ) {
+			return;
+		}
+		set_transient( self::REDIRECT_TRANSIENT, get_current_user_id(), 60 );
+	}
+
+	/**
+	 * Redirect to the tool page once after a single-plugin activation.
+	 */
+	public function maybe_activation_redirect() {
+		$user_id = get_transient( self::REDIRECT_TRANSIENT );
+		if ( false === $user_id ) {
+			return;
+		}
+		delete_transient( self::REDIRECT_TRANSIENT );
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only check for bulk activation.
+		if ( wp_doing_ajax() || isset( $_GET['activate-multi'] ) || get_current_user_id() !== (int) $user_id || ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
+		wp_safe_redirect( self::page_url() );
+		exit;
+	}
+
+	/**
 	 * Deactivation: clear our scheduled event.
 	 */
 	public static function deactivate() {
@@ -1095,10 +1134,12 @@ final class Cron_Health_Check {
 	 */
 	public static function uninstall() {
 		delete_option( self::OPTION );
+		delete_transient( self::REDIRECT_TRANSIENT );
 		wp_clear_scheduled_hook( self::TEST_HOOK );
 	}
 }
 
+register_activation_hook( __FILE__, array( 'Cron_Health_Check', 'activate' ) );
 register_deactivation_hook( __FILE__, array( 'Cron_Health_Check', 'deactivate' ) );
 register_uninstall_hook( __FILE__, array( 'Cron_Health_Check', 'uninstall' ) );
 
