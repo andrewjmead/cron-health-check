@@ -104,7 +104,7 @@
 		}
 		var passed = test.status === 'passed';
 		var icon = passed
-			? '<path class="chc-result-mark" d="M20 6 9 17l-5-5"/>'
+			? '<path class="chc-result-mark" d="m4 12 5 5L20 6"/>'
 			: '<path class="chc-result-mark" d="M18 6 6 18"/><path class="chc-result-mark" d="m6 6 12 12"/>';
 		result.innerHTML =
 			'<div class="chc-result-card chc-status-' + ( passed ? 'passed' : 'failed' ) + '">' +

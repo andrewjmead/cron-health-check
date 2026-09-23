@@ -332,7 +332,7 @@ final class Cron_Health_Check {
 		<div class="chc-result-card chc-status-<?php echo esc_attr( $summary['status'] ); ?>">
 			<span class="chc-result-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
 			<?php if ( $passed ) : ?>
-				<path class="chc-result-mark" d="M20 6 9 17l-5-5"/>
+				<path class="chc-result-mark" d="m4 12 5 5L20 6"/>
 			<?php else : ?>
 				<path class="chc-result-mark" d="M18 6 6 18"/><path class="chc-result-mark" d="m6 6 12 12"/>
 			<?php endif; ?>
