@@ -75,6 +75,88 @@ final class SpawnTest extends WP_UnitTestCase {
 	}
 
 	/**
+	 * run_test() schedules the event and returns a record with spawn data.
+	 */
+	public function test_run_test_schedules_event() {
+		// The WP test bootstrap defines DISABLE_WP_CRON; the filter is the
+		// supported way to override it in tests.
+		add_filter( 'chc_cron_disabled', '__return_false' );
+		delete_option( Cron_Health_Check::OPTION );
+
+		$test = Cron_Health_Check::instance()->run_test();
+
+		remove_filter( 'chc_cron_disabled', '__return_false' );
+
+		$this->assertIsArray( $test );
+		$this->assertArrayHasKey( 'spawn', $test );
+		$this->assertNotEmpty( $test['id'] );
+		$this->assertNotFalse( wp_next_scheduled( Cron_Health_Check::TEST_HOOK, array( $test['id'] ) ) );
+		// If the spawned process fired the event before spawn_cron() returned,
+		// the merge must have preserved it.
+		if ( 'passed' === $test['status'] ) {
+			$this->assertNotNull( $test['fired'] );
+			$this->assertNotNull( $test['duration'] );
+		} else {
+			$this->assertSame( 'running', $test['status'] );
+		}
+	}
+
+	/**
+	 * The post-spawn merge must not clobber a `fired` value written to the DB
+	 * by the spawned wp-cron.php process while this process held a stale
+	 * cached copy of the option.
+	 */
+	public function test_finalize_preserves_fired_written_by_other_process() {
+		global $wpdb;
+
+		$instance = Cron_Health_Check::instance();
+		$running  = array(
+			'id'      => 'x',
+			'started' => time(),
+			'fired'   => null,
+			'status'  => 'running',
+		);
+		update_option( Cron_Health_Check::OPTION, $running, false );
+		get_option( Cron_Health_Check::OPTION ); // Prime the runtime cache.
+
+		// Simulate the spawned process writing the result directly to the DB,
+		// leaving this process's cached copy stale (fired=null).
+		$fired = array_merge(
+			$running,
+			array(
+				'fired'    => time(),
+				'status'   => 'passed',
+				'duration' => 1.2,
+				'source'   => 'loopback',
+			)
+		);
+		$wpdb->update(
+			$wpdb->options,
+			array( 'option_value' => maybe_serialize( $fired ) ),
+			array( 'option_name' => Cron_Health_Check::OPTION )
+		);
+
+		// Stash a spawn payload exactly as capture_spawn() does.
+		$instance->capture_spawn(
+			array( 'response' => array( 'code' => 200 ) ),
+			'',
+			'',
+			array(),
+			home_url( '/wp-cron.php' )
+		);
+
+		$merged = $instance->finalize_test( $running );
+
+		$this->assertSame( 'passed', $merged['status'] );
+		$this->assertSame( $fired['fired'], $merged['fired'] );
+		$this->assertSame( 200, $merged['spawn']['code'] );
+
+		$stored = get_option( Cron_Health_Check::OPTION );
+		$this->assertSame( 'passed', $stored['status'] );
+		$this->assertSame( 200, $stored['spawn']['code'] );
+	}
+
+	/**
 	 * When cron is disabled via the filter, summarize reflects the stored failure.
 	 */
 	public function test_disabled_flag() {

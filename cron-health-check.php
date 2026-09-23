@@ -47,18 +47,18 @@ final class Cron_Health_Check {
 	const OVERDUE_GRACE = 60;
 
 	/**
-	 * Age (seconds) after which a still-"running" stored test renders as timed out.
-	 *
-	 * @var int
-	 */
-	const STALE_AGE = 300;
-
-	/**
 	 * Singleton instance.
 	 *
 	 * @var Cron_Health_Check|null
 	 */
 	private static $instance = null;
+
+	/**
+	 * Spawn result captured during run_test(), merged into the option afterwards.
+	 *
+	 * @var array|null
+	 */
+	private $spawn = null;
 
 	/**
 	 * Get the singleton instance.
@@ -177,6 +177,9 @@ final class Cron_Health_Check {
 			CHC_VERSION,
 			true
 		);
+		$test    = get_option( self::OPTION, null );
+		$summary = self::summarize_test( is_array( $test ) ? $test : null, time(), self::test_timeout() );
+
 		wp_localize_script(
 			'cron-health-check',
 			'chcData',
@@ -186,6 +189,27 @@ final class Cron_Health_Check {
 				'timeout' => self::test_timeout(),
 				'altCron' => self::is_alternate_cron(),
 				'homeUrl' => home_url( '/' ),
+				'resume'  => ( 'running' === $summary['status'] ),
+				'i18n'    => array(
+					'passed'          => __( 'Passed', 'cron-health-check' ),
+					'failed'          => __( 'Failed', 'cron-health-check' ),
+					'running'         => __( 'Running', 'cron-health-check' ),
+					'unknown'         => __( 'Unknown', 'cron-health-check' ),
+					'noTest'          => __( 'No test has been run yet.', 'cron-health-check' ),
+					'requestFailed'   => __( 'Request failed. Check your connection and try again.', 'cron-health-check' ),
+					'couldNotStart'   => __( 'Could not start the test.', 'cron-health-check' ),
+					'timeout'         => __( 'The event was scheduled but never ran.', 'cron-health-check' ),
+					/* translators: 1: duration in seconds, 2: trigger source. */
+					'firedIn'         => __( 'Cron fired in %1$ss via %2$s.', 'cron-health-check' ),
+					/* translators: %s: duration in seconds. */
+					'firedInNoSource' => __( 'Cron fired in %ss.', 'cron-health-check' ),
+					'neverRan'        => __( 'The event was scheduled but never ran.', 'cron-health-check' ),
+					'isRunning'       => __( 'The test is running.', 'cron-health-check' ),
+					'duration'        => __( 'Duration', 'cron-health-check' ),
+					'source'          => __( 'Source', 'cron-health-check' ),
+					'ran'             => __( 'Ran', 'cron-health-check' ),
+					'justNow'         => __( 'just now', 'cron-health-check' ),
+				),
 			)
 		);
 	}
@@ -200,7 +224,7 @@ final class Cron_Health_Check {
 
 		$now         = time();
 		$test        = get_option( self::OPTION, null );
-		$summary     = self::summarize_test( is_array( $test ) ? $test : null, $now, self::STALE_AGE );
+		$summary     = self::summarize_test( is_array( $test ) ? $test : null, $now, self::test_timeout() );
 		$diagnostics = self::get_diagnostics();
 		$rows        = self::get_event_rows();
 		$parts       = self::partition_overdue( $rows, $now, self::OVERDUE_GRACE );
@@ -631,6 +655,20 @@ final class Cron_Health_Check {
 	 */
 	public function ajax_start_test() {
 		$this->verify_ajax();
+		wp_send_json_success( $this->run_test() );
+	}
+
+	/**
+	 * Schedule the test event, spawn cron, and merge the spawn result.
+	 *
+	 * The spawn is blocking, so the event may already have fired (and been
+	 * written to the DB by another PHP process) by the time spawn_cron()
+	 * returns — the merge step re-reads the option fresh to preserve that.
+	 *
+	 * @return array The test record.
+	 */
+	public function run_test(): array {
+		$this->spawn = null;
 
 		if ( self::is_cron_disabled() ) {
 			$test = array(
@@ -647,7 +685,7 @@ final class Cron_Health_Check {
 				'message'      => __( 'WP-Cron is disabled via DISABLE_WP_CRON. WordPress will never trigger scheduled events itself; a system cron must call wp-cron.php.', 'cron-health-check' ),
 			);
 			update_option( self::OPTION, $test, false );
-			wp_send_json_success( $test );
+			return $test;
 		}
 
 		wp_clear_scheduled_hook( self::TEST_HOOK );
@@ -667,24 +705,24 @@ final class Cron_Health_Check {
 
 		$id   = wp_generate_password( 12, false, false );
 		$test = array(
-			'id'           => $id,
-			'started'      => time(),
-			'fired'        => null,
-			'duration'     => null,
-			'source'       => null,
-			'status'       => 'running',
-			'reason'       => null,
-			'spawn'        => null,
-			'lock_cleared' => $lock_cleared,
-			'lock_fresh'   => $lock_fresh,
+			'id'            => $id,
+			'started'       => time(),
+			'started_micro' => microtime( true ),
+			'fired'         => null,
+			'duration'      => null,
+			'source'        => null,
+			'status'        => 'running',
+			'reason'        => null,
+			'spawn'         => null,
+			'lock_cleared'  => $lock_cleared,
+			'lock_fresh'    => $lock_fresh,
 		);
 		update_option( self::OPTION, $test, false );
 
 		wp_schedule_single_event( time() - 1, self::TEST_HOOK, array( $id ) );
 
 		if ( self::is_alternate_cron() ) {
-			$test['spawn'] = array( 'alternate' => true );
-			update_option( self::OPTION, $test, false );
+			$this->spawn = array( 'alternate' => true );
 		} else {
 			add_filter( 'cron_request', array( $this, 'filter_cron_request' ) );
 			add_action( 'http_api_debug', array( $this, 'capture_spawn' ), 10, 5 );
@@ -693,7 +731,27 @@ final class Cron_Health_Check {
 			remove_action( 'http_api_debug', array( $this, 'capture_spawn' ), 10 );
 		}
 
-		wp_send_json_success( $test );
+		return $this->finalize_test( $test );
+	}
+
+	/**
+	 * Merge the captured spawn result into the test record.
+	 *
+	 * Re-reads the option with a fresh cache first so a `fired` value written
+	 * by the spawned wp-cron.php process is not overwritten.
+	 *
+	 * @param array $test The test record written before the spawn.
+	 * @return array The merged test record.
+	 */
+	public function finalize_test( array $test ): array {
+		wp_cache_delete( self::OPTION, 'options' );
+		$fresh = get_option( self::OPTION, null );
+		if ( is_array( $fresh ) ) {
+			$test = $fresh;
+		}
+		$test['spawn'] = $this->spawn;
+		update_option( self::OPTION, $test, false );
+		return $test;
 	}
 
 	/**
@@ -721,19 +779,14 @@ final class Cron_Health_Check {
 		if ( ! is_string( $url ) || false === strpos( $url, 'wp-cron.php' ) ) {
 			return;
 		}
-		$test = get_option( self::OPTION, null );
-		if ( ! is_array( $test ) ) {
-			return;
-		}
 		$code  = is_wp_error( $response ) ? null : wp_remote_retrieve_response_code( $response );
 		$error = is_wp_error( $response ) ? $response->get_error_message() : null;
 
-		$test['spawn'] = array(
+		$this->spawn = array(
 			'code'  => $code ? $code : null,
 			'error' => $error,
 			'url'   => $url,
 		);
-		update_option( self::OPTION, $test, false );
 	}
 
 	/**
@@ -785,10 +838,13 @@ final class Cron_Health_Check {
 			return;
 		}
 
-		$test['fired']    = time();
-		$test['duration'] = $test['fired'] - (int) $test['started'];
-		$test['status']   = 'passed';
-		$test['source']   = self::detect_source();
+		$test['fired']       = time();
+		$test['fired_micro'] = microtime( true );
+		$test['duration']    = isset( $test['started_micro'] )
+			? round( $test['fired_micro'] - (float) $test['started_micro'], 1 )
+			: $test['fired'] - (int) $test['started'];
+		$test['status']      = 'passed';
+		$test['source']      = self::detect_source();
 		unset( $test['message'] );
 		update_option( self::OPTION, $test, false );
 	}

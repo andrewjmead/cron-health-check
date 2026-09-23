@@ -2,6 +2,7 @@
 	'use strict';
 
 	var data = window.chcData || {};
+	var i18n = data.i18n || {};
 	var runButton = document.getElementById( 'chc-run-test' );
 	var result = document.getElementById( 'chc-result' );
 	var steps = document.querySelectorAll( '#chc-stepper .chc-step' );
@@ -9,6 +10,18 @@
 	var allEvents = document.getElementById( 'chc-all-events' );
 	var clearLock = document.getElementById( 'chc-clear-lock' );
 	var pollTimer = null;
+	var activeStep = null;
+
+	function t( key ) {
+		return i18n[ key ] || key;
+	}
+
+	function fmt( str ) {
+		var args = Array.prototype.slice.call( arguments, 1 );
+		return str.replace( /%(\d\$)?s/g, function () {
+			return String( args.shift() );
+		} );
+	}
 
 	function post( action, onDone ) {
 		var body = new FormData();
@@ -22,14 +35,14 @@
 			.then( function ( r ) { return r.json(); } )
 			.then( onDone )
 			.catch( function () {
-				render( { status: 'failed', message: 'Request failed. Check your connection and try again.' } );
-				setRunning( false );
+				finish( { status: 'failed', message: t( 'requestFailed' ) } );
 			} );
 	}
 
 	function setStep( activeKey ) {
 		var keys = [ 'scheduled', 'spawning', 'waiting' ];
 		var activeIndex = keys.indexOf( activeKey );
+		activeStep = activeKey;
 		steps.forEach( function ( step ) {
 			var idx = keys.indexOf( step.getAttribute( 'data-step' ) );
 			step.classList.toggle( 'is-done', idx < activeIndex );
@@ -37,9 +50,24 @@
 		} );
 	}
 
+	function finishSteps( status ) {
+		steps.forEach( function ( step ) {
+			step.classList.remove( 'is-active' );
+			if ( status === 'passed' ) {
+				step.classList.add( 'is-done' );
+			} else if ( status === 'failed' && step.getAttribute( 'data-step' ) === activeStep ) {
+				step.classList.add( 'is-failed' );
+			}
+		} );
+		if ( status === 'failed' && ! activeStep ) {
+			var last = steps[ steps.length - 1 ];
+			if ( last ) { last.classList.add( 'is-failed' ); }
+		}
+	}
+
 	function resetSteps() {
 		steps.forEach( function ( step ) {
-			step.classList.remove( 'is-done', 'is-active' );
+			step.classList.remove( 'is-done', 'is-active', 'is-failed' );
 		} );
 	}
 
@@ -56,37 +84,42 @@
 	}
 
 	function statusLabel( status ) {
-		if ( status === 'passed' ) { return 'Passed'; }
-		if ( status === 'failed' ) { return 'Failed'; }
-		if ( status === 'running' ) { return 'Running'; }
-		return 'Unknown';
+		if ( status === 'passed' ) { return t( 'passed' ); }
+		if ( status === 'failed' ) { return t( 'failed' ); }
+		if ( status === 'running' ) { return t( 'running' ); }
+		return t( 'unknown' );
 	}
 
 	function messageFor( test ) {
 		if ( test.message ) { return test.message; }
 		if ( test.status === 'passed' ) {
-			var src = test.source ? ' via ' + test.source : '';
-			var dur = test.duration != null ? test.duration + 's' : '';
-			return 'Cron fired in ' + dur + src + '.';
+			var dur = test.duration != null ? Number( test.duration ).toFixed( 1 ) : '0.0';
+			if ( test.source ) {
+				return fmt( t( 'firedIn' ), dur, test.source );
+			}
+			return fmt( t( 'firedInNoSource' ), dur );
 		}
 		if ( test.status === 'failed' ) {
-			return 'The event was scheduled but never ran.';
+			return t( 'neverRan' );
 		}
-		return 'The test is running.';
+		return t( 'isRunning' );
 	}
 
 	function render( test ) {
 		if ( ! result ) { return; }
 		if ( ! test || test.status === 'none' ) {
-			result.innerHTML = '<p class="chc-result-empty">No test has been run yet.</p>';
+			result.innerHTML = '<p class="chc-result-empty">' + esc( t( 'noTest' ) ) + '</p>';
 			return;
 		}
 		var meta = '';
+		if ( test.started ) {
+			meta += '<div><dt>' + esc( t( 'ran' ) ) + '</dt><dd>' + esc( t( 'justNow' ) ) + '</dd></div>';
+		}
 		if ( test.duration != null ) {
-			meta += '<div><dt>Duration</dt><dd>' + esc( test.duration ) + 's</dd></div>';
+			meta += '<div><dt>' + esc( t( 'duration' ) ) + '</dt><dd>' + esc( Number( test.duration ).toFixed( 1 ) ) + 's</dd></div>';
 		}
 		if ( test.source ) {
-			meta += '<div><dt>Source</dt><dd>' + esc( test.source ) + '</dd></div>';
+			meta += '<div><dt>' + esc( t( 'source' ) ) + '</dt><dd>' + esc( test.source ) + '</dd></div>';
 		}
 		result.innerHTML =
 			'<div class="chc-result-card chc-status-' + esc( test.status ) + '">' +
@@ -94,6 +127,13 @@
 				'<p class="chc-result-message">' + esc( messageFor( test ) ) + '</p>' +
 				( meta ? '<dl class="chc-result-meta">' + meta + '</dl>' : '' ) +
 			'</div>';
+	}
+
+	function finish( test ) {
+		stopPolling();
+		render( test );
+		finishSteps( test && test.status ? test.status : 'failed' );
+		setRunning( false );
 	}
 
 	function stopPolling() {
@@ -106,15 +146,13 @@
 	function poll( elapsed ) {
 		var limit = ( data.timeout || 30 ) + 5;
 		if ( elapsed > limit ) {
-			stopPolling();
-			setRunning( false );
+			finish( { status: 'failed', message: t( 'timeout' ) } );
 			return;
 		}
 		post( 'chc_test_status', function ( res ) {
 			var test = res && res.success ? res.data : null;
 			if ( test && test.status && test.status !== 'running' ) {
-				render( test );
-				setRunning( false );
+				finish( test );
 				return;
 			}
 			pollTimer = setTimeout( function () { poll( elapsed + 1 ); }, 1000 );
@@ -129,14 +167,16 @@
 			post( 'chc_start_test', function ( res ) {
 				var test = res && res.success ? res.data : null;
 				if ( ! test ) {
-					render( { status: 'failed', message: ( res && res.data && res.data.message ) || 'Could not start the test.' } );
-					setRunning( false );
+					finish( { status: 'failed', message: ( res && res.data && res.data.message ) || t( 'couldNotStart' ) } );
 					return;
 				}
 				setStep( 'waiting' );
 				if ( test.status === 'failed' ) {
-					render( test );
-					setRunning( false );
+					finish( test );
+					return;
+				}
+				if ( test.status === 'passed' ) {
+					finish( test );
 					return;
 				}
 				if ( data.altCron && data.homeUrl ) {
@@ -166,5 +206,12 @@
 				window.location.reload();
 			} );
 		} );
+	}
+
+	// Resume polling for a test still running when the page was loaded.
+	if ( data.resume ) {
+		setRunning( true );
+		setStep( 'waiting' );
+		poll( 0 );
 	}
 } )();

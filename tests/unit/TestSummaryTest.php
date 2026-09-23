@@ -58,6 +58,26 @@ final class TestSummaryTest extends CHC_Unit_TestCase {
 	}
 
 	/**
+	 * A passed test with a sub-second duration formats it in the message.
+	 */
+	public function test_passed_subsecond_duration() {
+		$test = array(
+			'id'       => 'x',
+			'started'  => 1000,
+			'fired'    => 1000,
+			'duration' => 0.7,
+			'status'   => 'passed',
+			'source'   => 'loopback',
+		);
+
+		$summary = Cron_Health_Check::summarize_test( $test, 1010, 30 );
+
+		$this->assertSame( 'passed', $summary['status'] );
+		$this->assertSame( 0.7, $summary['duration'] );
+		$this->assertStringContainsString( '0.7', $summary['message'] );
+	}
+
+	/**
 	 * A running test past the timeout is reported as failed/timeout.
 	 */
 	public function test_timeout() {

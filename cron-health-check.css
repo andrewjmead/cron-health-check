@@ -118,6 +118,15 @@
 	background: #1e8e3e;
 }
 
+.chc-step.is-failed {
+	color: #b3261e;
+	font-weight: 700;
+}
+
+.chc-step.is-failed .chc-dot {
+	background: #b3261e;
+}
+
 @keyframes chc-pulse {
 	0%, 100% { box-shadow: 0 0 0 0 rgba(91, 63, 160, 0.5); }
 	50% { box-shadow: 0 0 0 6px rgba(91, 63, 160, 0); }
