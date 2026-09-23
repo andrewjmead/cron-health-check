@@ -11,8 +11,6 @@
 	var diagnosticsCard = document.getElementById( 'chc-diagnostics-card' );
 	var pollTimer = null;
 
-	var STEPS = [ 'enabled', 'overdue', 'scheduled', 'spawning', 'waiting' ];
-
 	function t( key ) {
 		return i18n[ key ] || key;
 	}
@@ -40,46 +38,31 @@
 			} );
 	}
 
-	function markSteps( doneUpTo, active, failed ) {
-		var doneIdx = doneUpTo ? STEPS.indexOf( doneUpTo ) : -1;
-		var failIdx = failed ? STEPS.indexOf( failed ) : -1;
-		steps.forEach( function ( step ) {
-			var idx = STEPS.indexOf( step.getAttribute( 'data-step' ) );
-			step.classList.remove( 'is-done', 'is-active', 'is-failed' );
-			if ( idx === failIdx ) {
-				step.classList.add( 'is-failed' );
-			} else if ( idx <= doneIdx || ( failIdx >= 0 && idx < failIdx ) ) {
-				step.classList.add( 'is-done' );
-			} else if ( step.getAttribute( 'data-step' ) === active ) {
-				step.classList.add( 'is-active' );
+	function stepEl( key ) {
+		for ( var i = 0; i < steps.length; i++ ) {
+			if ( steps[ i ].getAttribute( 'data-step' ) === key ) {
+				return steps[ i ];
 			}
-		} );
+		}
+		return null;
 	}
 
-	function setActive( key ) {
-		var idx = STEPS.indexOf( key );
-		markSteps( idx > 0 ? STEPS[ idx - 1 ] : null, key, null );
-	}
-
-	function stepForFailure( test ) {
-		var r = ( test && test.reason ) || '';
-		if ( r === 'disabled' ) { return 'enabled'; }
-		if ( r === 'overdue' ) { return 'overdue'; }
-		if ( r === 'timeout_loopback_error' || r === 'timeout_http_error' ) { return 'spawning'; }
-		if ( r === 'start' ) { return 'scheduled'; }
-		return 'waiting'; // timeout_no_fire, timeout_no_request, requestFailed
-	}
-
-	// The overdue snapshot is taken up front, but its verdict lands after the
-	// event fires; when that is the only failure the later steps still passed.
-	function failStepFor( test ) {
-		var failed = stepForFailure( test );
-		markSteps( failed === 'overdue' && test && test.fired ? 'waiting' : null, null, failed );
+	function setStep( key, state, text ) {
+		var el = stepEl( key );
+		if ( ! el ) { return; }
+		el.classList.remove( 'is-active', 'is-done', 'is-failed' );
+		if ( 'active' === state ) { el.classList.add( 'is-active' ); }
+		if ( 'done' === state ) { el.classList.add( 'is-done' ); }
+		if ( 'failed' === state ) { el.classList.add( 'is-failed' ); }
+		var status = el.querySelector( '.chc-step-status' );
+		if ( status ) { status.textContent = text || ''; }
 	}
 
 	function resetSteps() {
 		steps.forEach( function ( step ) {
 			step.classList.remove( 'is-done', 'is-active', 'is-failed' );
+			var status = step.querySelector( '.chc-step-status' );
+			if ( status ) { status.textContent = ''; }
 		} );
 	}
 
@@ -102,14 +85,18 @@
 		return t( 'unknown' );
 	}
 
+	function firedText( test ) {
+		var dur = test.duration != null ? Number( test.duration ).toFixed( 1 ) : '0.0';
+		if ( test.source ) {
+			return fmt( t( 'firedIn' ), dur, test.source );
+		}
+		return fmt( t( 'firedInNoSource' ), dur );
+	}
+
 	function messageFor( test ) {
 		if ( test.message ) { return test.message; }
 		if ( test.status === 'passed' ) {
-			var dur = test.duration != null ? Number( test.duration ).toFixed( 1 ) : '0.0';
-			if ( test.source ) {
-				return fmt( t( 'firedIn' ), dur, test.source );
-			}
-			return fmt( t( 'firedInNoSource' ), dur );
+			return firedText( test );
 		}
 		if ( test.status === 'failed' ) {
 			return t( 'neverRan' );
@@ -160,10 +147,13 @@
 	function finish( test ) {
 		stopPolling();
 		render( test );
-		if ( test && test.status === 'passed' ) {
-			markSteps( 'waiting', null, null );
-		} else {
-			failStepFor( test );
+		var waiting = stepEl( 'waiting' );
+		var wasActive = waiting && waiting.classList.contains( 'is-active' );
+		if ( test && ( test.status === 'passed' || test.reason === 'overdue' ) ) {
+			// Overdue failures still fired, so waiting stays green.
+			setStep( 'waiting', 'done', firedText( test ) );
+		} else if ( wasActive && test && test.status === 'failed' ) {
+			setStep( 'waiting', 'failed', test.message || t( 'failed' ) );
 		}
 		setRunning( false );
 		refreshSections();
@@ -193,7 +183,7 @@
 	function poll( elapsed ) {
 		var limit = ( data.timeout || 30 ) + 5;
 		if ( elapsed > limit ) {
-			finish( { status: 'failed', message: t( 'timeout' ) } );
+			finish( { status: 'failed', reason: 'timeout', message: t( 'timeout' ) } );
 			return;
 		}
 		post( 'chc_test_status', function ( res ) {
@@ -206,55 +196,95 @@
 		} );
 	}
 
+	// Build the ordered per-step outcomes from the start response and play them
+	// 400ms apart; each item is { step, state, text, stop }.
+	function stepResults( test, errorMessage ) {
+		var list = [];
+		var reason = test ? ( test.reason || '' ) : '';
+
+		if ( 'disabled' === reason ) {
+			list.push( { step: 'enabled', state: 'failed', text: t( 'disabledTrue' ), stop: true } );
+			return list;
+		}
+		list.push( {
+			step: 'enabled',
+			state: 'done',
+			text: ( test && 'false' === test.disable_const ) ? t( 'disabledFalse' ) : t( 'disabledUndefined' )
+		} );
+
+		if ( ! test ) {
+			list.push( { step: 'scheduled', state: 'failed', text: errorMessage || t( 'couldNotStart' ), stop: true } );
+			return list;
+		}
+
+		var overdue = test.overdue != null ? Number( test.overdue ) : 0;
+		if ( overdue > 0 ) {
+			list.push( {
+				step: 'overdue',
+				state: 'failed',
+				text: fmt( t( 'overdueSome' ), overdue, Math.round( ( Number( test.overdue_oldest ) || 0 ) / 60 ) )
+			} );
+		} else {
+			list.push( { step: 'overdue', state: 'done', text: t( 'overdueNone' ) } );
+		}
+
+		list.push( { step: 'scheduled', state: 'done', text: t( 'scheduledOk' ) } );
+
+		var spawn = test.spawn;
+		if ( spawn && spawn.alternate ) {
+			list.push( { step: 'spawning', state: 'done', text: t( 'spawnAlternate' ) } );
+		} else if ( spawn && spawn.error ) {
+			list.push( { step: 'spawning', state: 'failed', text: String( spawn.error ), stop: true } );
+		} else if ( spawn && spawn.code >= 400 ) {
+			list.push( { step: 'spawning', state: 'failed', text: fmt( t( 'spawnHttpError' ), spawn.code ), stop: true } );
+		} else {
+			list.push( { step: 'spawning', state: 'done', text: spawn && spawn.code ? fmt( t( 'spawnOk' ), spawn.code ) : t( 'spawnSent' ) } );
+		}
+
+		if ( 'passed' === test.status ) {
+			list.push( { step: 'waiting', state: 'done', text: firedText( test ) } );
+		} else {
+			list.push( { step: 'waiting', state: 'active', text: fmt( t( 'waitingUpTo' ), data.timeout || 30 ) } );
+		}
+		return list;
+	}
+
+	function playSteps( list, i, after ) {
+		if ( i >= list.length ) {
+			after();
+			return;
+		}
+		var item = list[ i ];
+		setStep( item.step, item.state, item.text );
+		if ( item.stop ) {
+			after();
+			return;
+		}
+		setTimeout( function () { playSteps( list, i + 1, after ); }, 400 );
+	}
+
 	if ( runButton ) {
 		runButton.addEventListener( 'click', function () {
 			setRunning( true );
 			resetSteps();
-			setActive( 'enabled' );
-
-			// The start request covers enabled→overdue→scheduled→spawning in one
-			// round trip; tick the steps on a timer so the user sees the sequence.
-			var stagedDone = false;
-			setTimeout( function () { setActive( 'overdue' ); }, 400 );
-			setTimeout( function () { setActive( 'scheduled' ); }, 800 );
-			setTimeout( function () {
-				setActive( 'spawning' );
-				stagedDone = true;
-			}, 1200 );
+			setStep( 'enabled', 'active', '' );
 
 			post( 'chc_start_test', function ( res ) {
-				var proceed = function () {
-					var test = res && res.success ? res.data : null;
-					if ( ! test ) {
-						finish( {
-							status: 'failed',
-							reason: 'start',
-							message: ( res && res.data && res.data.message ) || t( 'couldNotStart' )
-						} );
+				var test = res && res.success ? res.data : null;
+				var errorMessage = ( res && res.data && res.data.message ) || t( 'couldNotStart' );
+				var list = stepResults( test, errorMessage );
+				playSteps( list, 0, function () {
+					if ( ! test || 'passed' === test.status || 'failed' === test.status ) {
+						finish( test || { status: 'failed', reason: 'start', message: errorMessage } );
 						return;
 					}
-					if ( test.status === 'failed' ) {
-						finish( test );
-						return;
-					}
-					if ( test.status === 'passed' ) {
-						finish( test );
-						return;
-					}
-					markSteps( 'spawning', 'waiting', null );
+					// Still running: keep waiting active and poll.
+					setStep( 'waiting', 'active', fmt( t( 'waitingUpTo' ), data.timeout || 30 ) );
 					if ( data.altCron && data.homeUrl ) {
 						fetch( data.homeUrl, { mode: 'no-cors', cache: 'no-store' } ).catch( function () {} );
 					}
 					poll( 0 );
-				};
-				var waitForStaged = function () {
-					if ( stagedDone ) {
-						proceed();
-					} else {
-						setTimeout( waitForStaged, 100 );
-					}
-				};
-				waitForStaged();
+				} );
 			} );
 		} );
 	}

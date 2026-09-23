@@ -7,7 +7,7 @@
 }
 
 .chc-header {
-	margin: 0 0 20px;
+	margin: 0 0 24px;
 }
 
 .chc-header h1 {
@@ -93,9 +93,9 @@
 .chc-stepper {
 	display: flex;
 	flex-direction: column;
-	gap: 10px;
+	gap: 14px;
 	list-style: none;
-	margin: 20px 0 0;
+	margin: 24px 0 0;
 	padding: 0;
 }
 
@@ -105,24 +105,54 @@
 
 .chc-step {
 	display: flex;
-	align-items: center;
-	gap: 8px;
-	font-size: 13px;
-	color: #8a8a8a;
+	align-items: flex-start;
+	gap: 12px;
 }
 
 .chc-dot {
-	width: 16px;
-	height: 16px;
+	width: 24px;
+	height: 24px;
 	border-radius: 50%;
 	background: #d9d9d9;
-	display: inline-block;
+	display: flex;
+	align-items: center;
+	justify-content: center;
 	position: relative;
 	flex-shrink: 0;
 	transition: background-color .2s;
 }
 
-.chc-step.is-active {
+.chc-step-num {
+	font-size: 12px;
+	font-weight: 700;
+	color: #6a6a6a;
+	line-height: 1;
+}
+
+.chc-step-body {
+	display: flex;
+	flex-direction: column;
+}
+
+.chc-step-label {
+	font-size: 14px;
+	font-weight: 600;
+	color: #8a8a8a;
+}
+
+.chc-step-status {
+	display: block;
+	font-size: 12px;
+	color: #6a6a6a;
+	margin-top: 2px;
+}
+
+.chc-step-status:empty {
+	display: none;
+}
+
+.chc-step.is-active .chc-step-label,
+.chc-step.is-done .chc-step-label {
 	color: #1a1a1a;
 }
 
@@ -131,27 +161,33 @@
 	animation: chc-pulse 1s ease-in-out infinite;
 }
 
-.chc-step.is-done {
-	color: #1a1a1a;
+.chc-step.is-active .chc-step-num {
+	color: #fff;
 }
 
 .chc-step.is-done .chc-dot {
 	background: #1e8e3e;
 }
 
+.chc-step.is-done .chc-step-num,
+.chc-step.is-failed .chc-step-num {
+	display: none;
+}
+
 .chc-step.is-done .chc-dot::after {
 	content: '';
 	position: absolute;
-	left: 5px;
-	top: 2px;
-	width: 4px;
-	height: 8px;
+	left: 9px;
+	top: 5px;
+	width: 5px;
+	height: 10px;
 	border: solid #fff;
 	border-width: 0 2px 2px 0;
 	transform: rotate(45deg);
 }
 
-.chc-step.is-failed {
+.chc-step.is-failed .chc-step-label,
+.chc-step.is-failed .chc-step-status {
 	color: #b3261e;
 }
 
@@ -163,10 +199,10 @@
 .chc-step.is-failed .chc-dot::after {
 	content: '';
 	position: absolute;
-	left: 7px;
-	top: 3px;
+	left: 11px;
+	top: 6px;
 	width: 2px;
-	height: 10px;
+	height: 12px;
 	background: #fff;
 }
 

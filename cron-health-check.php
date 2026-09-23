@@ -87,6 +87,18 @@ final class Cron_Health_Check {
 	}
 
 	/**
+	 * The raw DISABLE_WP_CRON constant state, for status wording.
+	 *
+	 * @return string 'undefined'|'true'|'false'
+	 */
+	private static function disable_wp_cron_state(): string {
+		if ( ! defined( 'DISABLE_WP_CRON' ) ) {
+			return 'undefined';
+		}
+		return DISABLE_WP_CRON ? 'true' : 'false';
+	}
+
+	/**
 	 * Whether DISABLE_WP_CRON is on. Filterable for tests.
 	 *
 	 * @return bool
@@ -187,23 +199,38 @@ final class Cron_Health_Check {
 				'altCron' => self::is_alternate_cron(),
 				'homeUrl' => home_url( '/' ),
 				'i18n'    => array(
-					'passed'          => __( 'Passed', 'cron-health-check' ),
-					'failed'          => __( 'Failed', 'cron-health-check' ),
-					'running'         => __( 'Running', 'cron-health-check' ),
-					'unknown'         => __( 'Unknown', 'cron-health-check' ),
-					'requestFailed'   => __( 'Request failed. Check your connection and try again.', 'cron-health-check' ),
-					'couldNotStart'   => __( 'Could not start the test.', 'cron-health-check' ),
-					'timeout'         => __( 'The event was scheduled but never ran.', 'cron-health-check' ),
+					'passed'            => __( 'Passed', 'cron-health-check' ),
+					'failed'            => __( 'Failed', 'cron-health-check' ),
+					'running'           => __( 'Running', 'cron-health-check' ),
+					'unknown'           => __( 'Unknown', 'cron-health-check' ),
+					'requestFailed'     => __( 'Request failed. Check your connection and try again.', 'cron-health-check' ),
+					'couldNotStart'     => __( 'Could not start the test.', 'cron-health-check' ),
+					'timeout'           => __( 'The event was scheduled but never ran.', 'cron-health-check' ),
 					/* translators: 1: duration in seconds, 2: trigger source. */
-					'firedIn'         => __( 'Cron fired in %1$ss via %2$s.', 'cron-health-check' ),
+					'firedIn'           => __( 'Cron fired in %1$ss via %2$s.', 'cron-health-check' ),
 					/* translators: %s: duration in seconds. */
-					'firedInNoSource' => __( 'Cron fired in %ss.', 'cron-health-check' ),
-					'neverRan'        => __( 'The event was scheduled but never ran.', 'cron-health-check' ),
-					'isRunning'       => __( 'The test is running.', 'cron-health-check' ),
-					'duration'        => __( 'Duration', 'cron-health-check' ),
-					'source'          => __( 'Source', 'cron-health-check' ),
-					'loopback'        => __( 'Loopback', 'cron-health-check' ),
-					'overdue'         => __( 'Overdue events (>30 min)', 'cron-health-check' ),
+					'firedInNoSource'   => __( 'Cron fired in %ss.', 'cron-health-check' ),
+					'neverRan'          => __( 'The event was scheduled but never ran.', 'cron-health-check' ),
+					'isRunning'         => __( 'The test is running.', 'cron-health-check' ),
+					'duration'          => __( 'Duration', 'cron-health-check' ),
+					'source'            => __( 'Source', 'cron-health-check' ),
+					'loopback'          => __( 'Loopback', 'cron-health-check' ),
+					'overdue'           => __( 'Overdue events (>30 min)', 'cron-health-check' ),
+					'disabledUndefined' => __( 'DISABLE_WP_CRON is not defined, so WordPress will trigger cron itself.', 'cron-health-check' ),
+					'disabledFalse'     => __( 'DISABLE_WP_CRON is set to false, so WordPress will trigger cron itself.', 'cron-health-check' ),
+					'disabledTrue'      => __( 'DISABLE_WP_CRON is set to true. WordPress will never trigger scheduled events; a system cron must call wp-cron.php.', 'cron-health-check' ),
+					'overdueNone'       => __( 'No cron events are more than 30 minutes overdue.', 'cron-health-check' ),
+					/* translators: 1: overdue event count, 2: minutes the oldest event is late. */
+					'overdueSome'       => __( '%1$s cron event(s) are more than 30 minutes overdue (oldest: %2$s min).', 'cron-health-check' ),
+					'scheduledOk'       => __( 'Scheduled a one-off test event.', 'cron-health-check' ),
+					/* translators: %s: HTTP status code. */
+					'spawnOk'           => __( 'spawn_cron() sent the loopback request to wp-cron.php (HTTP %s).', 'cron-health-check' ),
+					'spawnSent'         => __( 'spawn_cron() sent the loopback request to wp-cron.php.', 'cron-health-check' ),
+					'spawnAlternate'    => __( 'ALTERNATE_WP_CRON is enabled; cron is triggered by a page redirect instead.', 'cron-health-check' ),
+					/* translators: %s: HTTP status code. */
+					'spawnHttpError'    => __( 'wp-cron.php responded with HTTP %s.', 'cron-health-check' ),
+					/* translators: %s: timeout in seconds. */
+					'waitingUpTo'       => __( 'Waiting up to %ss for the event to fire…', 'cron-health-check' ),
 				),
 			)
 		);
@@ -233,15 +260,15 @@ final class Cron_Health_Check {
 				</header>
 
 				<button type="button" id="chc-run-test" class="chc-button">
-					<?php esc_html_e( 'Run Test', 'cron-health-check' ); ?>
+					<?php esc_html_e( 'Test Cron Health', 'cron-health-check' ); ?>
 				</button>
 
 				<ol class="chc-stepper" id="chc-stepper">
-					<li class="chc-step" data-step="enabled"><span class="chc-dot"></span><span class="chc-step-label"><?php esc_html_e( 'Checking that WP-Cron is enabled', 'cron-health-check' ); ?></span></li>
-					<li class="chc-step" data-step="overdue"><span class="chc-dot"></span><span class="chc-step-label"><?php esc_html_e( 'Checking for overdue events', 'cron-health-check' ); ?></span></li>
-					<li class="chc-step" data-step="scheduled"><span class="chc-dot"></span><span class="chc-step-label"><?php esc_html_e( 'Scheduling test event', 'cron-health-check' ); ?></span></li>
-					<li class="chc-step" data-step="spawning"><span class="chc-dot"></span><span class="chc-step-label"><?php esc_html_e( 'Spawning cron', 'cron-health-check' ); ?></span></li>
-					<li class="chc-step" data-step="waiting"><span class="chc-dot"></span><span class="chc-step-label"><?php esc_html_e( 'Waiting for event to fire', 'cron-health-check' ); ?></span></li>
+					<li class="chc-step" data-step="enabled"><span class="chc-dot"><span class="chc-step-num">1</span></span><span class="chc-step-body"><span class="chc-step-label"><?php esc_html_e( 'Checking that WP-Cron is enabled', 'cron-health-check' ); ?></span><span class="chc-step-status" data-status></span></span></li>
+					<li class="chc-step" data-step="overdue"><span class="chc-dot"><span class="chc-step-num">2</span></span><span class="chc-step-body"><span class="chc-step-label"><?php esc_html_e( 'Checking for overdue cron events', 'cron-health-check' ); ?></span><span class="chc-step-status" data-status></span></span></li>
+					<li class="chc-step" data-step="scheduled"><span class="chc-dot"><span class="chc-step-num">3</span></span><span class="chc-step-body"><span class="chc-step-label"><?php esc_html_e( 'Scheduling a test cron event', 'cron-health-check' ); ?></span><span class="chc-step-status" data-status></span></span></li>
+					<li class="chc-step" data-step="spawning"><span class="chc-dot"><span class="chc-step-num">4</span></span><span class="chc-step-body"><span class="chc-step-label"><?php esc_html_e( 'Attempting to run test event', 'cron-health-check' ); ?></span><span class="chc-step-status" data-status></span></span></li>
+					<li class="chc-step" data-step="waiting"><span class="chc-dot"><span class="chc-step-num">5</span></span><span class="chc-step-body"><span class="chc-step-label"><?php esc_html_e( 'Waiting for test cron event to fire', 'cron-health-check' ); ?></span><span class="chc-step-status" data-status></span></span></li>
 				</ol>
 
 				<div id="chc-result" class="chc-result" aria-live="polite"><?php $this->render_result( $summary, null ); ?></div>
@@ -545,17 +572,18 @@ final class Cron_Health_Check {
 
 		if ( self::is_cron_disabled() ) {
 			$test = array(
-				'id'           => null,
-				'started'      => time(),
-				'fired'        => null,
-				'duration'     => null,
-				'source'       => null,
-				'status'       => 'failed',
-				'reason'       => 'disabled',
-				'spawn'        => null,
-				'lock_cleared' => false,
-				'lock_age'     => 0,
-				'message'      => __( 'WP-Cron is disabled via DISABLE_WP_CRON. WordPress will never trigger scheduled events itself; a system cron must call wp-cron.php.', 'cron-health-check' ),
+				'id'            => null,
+				'started'       => time(),
+				'fired'         => null,
+				'duration'      => null,
+				'source'        => null,
+				'status'        => 'failed',
+				'reason'        => 'disabled',
+				'disable_const' => self::disable_wp_cron_state(),
+				'spawn'         => null,
+				'lock_cleared'  => false,
+				'lock_age'      => 0,
+				'message'       => __( 'WP-Cron is disabled via DISABLE_WP_CRON. WordPress will never trigger scheduled events itself; a system cron must call wp-cron.php.', 'cron-health-check' ),
 			);
 			$test = $this->with_overdue( $test );
 			update_option( self::OPTION, $test, false );
@@ -583,6 +611,7 @@ final class Cron_Health_Check {
 			'source'        => null,
 			'status'        => 'running',
 			'reason'        => null,
+			'disable_const' => self::disable_wp_cron_state(),
 			'spawn'         => null,
 			'lock_cleared'  => $lock_cleared,
 			'lock_age'      => $lock_age,
