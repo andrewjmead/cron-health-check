@@ -8,6 +8,6 @@
 	"scripts": {
 		"env:start": "wp-env start",
 		"env:stop": "wp-env stop",
-		"test:integration": "wp-env run tests-cli --env-cwd=wp-content/plugins/cron-health-check vendor/bin/phpunit -c phpunit-integration.xml.dist"
+		"test:integration": "wp-env run tests-cli --env-cwd=wp-content/cron-health-check-dev vendor/bin/phpunit -c phpunit-integration.xml.dist"
 	}
 }

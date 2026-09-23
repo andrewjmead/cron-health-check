@@ -1,6 +1,7 @@
 .git
 .github
 tests
+assets
 vendor
 node_modules
 dist

@@ -1,6 +1,6 @@
 # Cron Health Check
 
-A WordPress plugin that manually tests whether WP-Cron actually fires on your site, and lists overdue scheduled events. The shipped plugin is three files: `cron-health-check.php`, `cron-health-check.js`, `cron-health-check.css`.
+A WordPress plugin that manually tests whether WP-Cron actually fires on your site, and lists overdue scheduled events. The shipped plugin lives in `src/` and is three files: `src/cron-health-check.php`, `src/cron-health-check.js`, `src/cron-health-check.css`.
 
 ## Development setup
 

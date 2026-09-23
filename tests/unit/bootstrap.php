@@ -16,7 +16,7 @@ Brain\Monkey\Functions\when( 'register_deactivation_hook' )->justReturn();
 Brain\Monkey\Functions\when( 'register_uninstall_hook' )->justReturn();
 Brain\Monkey\Functions\when( 'plugin_basename' )->returnArg();
 
-require_once dirname( __DIR__, 2 ) . '/cron-health-check.php';
+require_once dirname( __DIR__, 2 ) . '/src/cron-health-check.php';
 
 /**
  * Base test case wiring Brain Monkey into the PHPUnit lifecycle.

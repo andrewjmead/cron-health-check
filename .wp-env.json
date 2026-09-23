@@ -1,18 +1,24 @@
 {
 	"core": null,
 	"phpVersion": "8.1",
-	"plugins": [
-		"."
-	],
+	"plugins": [],
+	"mappings": {
+		"wp-content/plugins/cron-health-check": "./src",
+		"wp-content/cron-health-check-dev": ".",
+		"wp-content/mu-plugins/preview-host.php": "./dev/preview-host.php"
+	},
 	"env": {
 		"tests": {
 			"phpVersion": "8.1",
-			"plugins": [
-				"."
-			]
+			"plugins": [],
+			"mappings": {
+				"wp-content/plugins/cron-health-check": "./src",
+				"wp-content/cron-health-check-dev": ".",
+				"wp-content/mu-plugins/preview-host.php": "./dev/preview-host.php"
+			}
 		}
 	},
-	"mappings": {
-		"wp-content/mu-plugins/preview-host.php": "./dev/preview-host.php"
+	"lifecycleScripts": {
+		"afterStart": "wp-env run cli wp plugin activate cron-health-check && wp-env run tests-cli wp plugin activate cron-health-check"
 	}
 }
