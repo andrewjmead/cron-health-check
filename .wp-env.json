@@ -1,11 +1,18 @@
 {
 	"core": null,
-	"phpVersion": "7.4",
-	"plugins": [ "." ],
+	"phpVersion": "8.1",
+	"plugins": [
+		"."
+	],
 	"env": {
 		"tests": {
-			"phpVersion": "7.4",
-			"plugins": [ "." ]
+			"phpVersion": "8.1",
+			"plugins": [
+				"."
+			]
 		}
+	},
+	"mappings": {
+		"wp-content/mu-plugins/preview-host.php": "./dev/preview-host.php"
 	}
 }

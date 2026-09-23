@@ -5,6 +5,7 @@ vendor
 node_modules
 dist
 bin
+dev
 composer.json
 composer.lock
 package.json
