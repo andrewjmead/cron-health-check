@@ -191,7 +191,6 @@ final class Cron_Health_Check {
 					'failed'          => __( 'Failed', 'cron-health-check' ),
 					'running'         => __( 'Running', 'cron-health-check' ),
 					'unknown'         => __( 'Unknown', 'cron-health-check' ),
-					'noTest'          => __( 'Run the test to check whether WP-Cron fires on this site.', 'cron-health-check' ),
 					'requestFailed'   => __( 'Request failed. Check your connection and try again.', 'cron-health-check' ),
 					'couldNotStart'   => __( 'Could not start the test.', 'cron-health-check' ),
 					'timeout'         => __( 'The event was scheduled but never ran.', 'cron-health-check' ),
@@ -227,11 +226,12 @@ final class Cron_Health_Check {
 		$lock        = self::lock_state( self::get_lock(), microtime( true ), self::lock_timeout() );
 		?>
 		<div class="wrap chc-wrap">
-			<header class="chc-header">
-				<h1><?php esc_html_e( 'Cron Health Check', 'cron-health-check' ); ?></h1>
-			</header>
-
 			<section class="chc-card chc-test-panel">
+				<header class="chc-header">
+					<h1><?php esc_html_e( 'Cron Health Check', 'cron-health-check' ); ?></h1>
+					<p class="chc-subtitle"><?php esc_html_e( 'Run the test to check whether WP-Cron fires on this site.', 'cron-health-check' ); ?></p>
+				</header>
+
 				<button type="button" id="chc-run-test" class="chc-button">
 					<?php esc_html_e( 'Run Test', 'cron-health-check' ); ?>
 				</button>
@@ -244,9 +244,7 @@ final class Cron_Health_Check {
 					<li class="chc-step" data-step="waiting"><span class="chc-dot"></span><span class="chc-step-label"><?php esc_html_e( 'Waiting for event to fire', 'cron-health-check' ); ?></span></li>
 				</ol>
 
-				<div id="chc-result" class="chc-result" aria-live="polite">
-					<?php $this->render_result( $summary, null ); ?>
-				</div>
+				<div id="chc-result" class="chc-result" aria-live="polite"><?php $this->render_result( $summary, null ); ?></div>
 
 				<?php if ( 'stale' === $lock['state'] ) : ?>
 					<p class="chc-lock-action">
@@ -285,7 +283,6 @@ final class Cron_Health_Check {
 	 */
 	private function render_result( array $summary, $test ) {
 		if ( 'none' === $summary['status'] ) {
-			echo '<p class="chc-result-empty">' . esc_html__( 'Run the test to check whether WP-Cron fires on this site.', 'cron-health-check' ) . '</p>';
 			return;
 		}
 		?>

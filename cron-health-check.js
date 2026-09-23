@@ -120,7 +120,7 @@
 	function render( test ) {
 		if ( ! result ) { return; }
 		if ( ! test || test.status === 'none' ) {
-			result.innerHTML = '<p class="chc-result-empty">' + esc( t( 'noTest' ) ) + '</p>';
+			result.innerHTML = '';
 			return;
 		}
 		var meta = '';
