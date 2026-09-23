@@ -219,7 +219,6 @@ final class Cron_Health_Check {
 					'failed'            => __( 'Failed', 'cron-health-check' ),
 					'passedTitle'       => self::result_title( 'passed' ),
 					'failedTitle'       => self::result_title( 'failed' ),
-					'passedMessage'     => self::passed_message(),
 					'requestFailed'     => __( 'Request failed. Check your connection and try again.', 'cron-health-check' ),
 					'couldNotStart'     => __( 'Could not start the test.', 'cron-health-check' ),
 					'timeout'           => __( 'The event was scheduled but never ran.', 'cron-health-check' ),
@@ -345,11 +344,20 @@ final class Cron_Health_Check {
 		if ( ! in_array( $summary['status'], array( 'passed', 'failed' ), true ) ) {
 			return;
 		}
-		$message = 'passed' === $summary['status'] ? self::passed_message() : $summary['message'];
+		$passed = 'passed' === $summary['status'];
 		?>
 		<div class="chc-result-card chc-status-<?php echo esc_attr( $summary['status'] ); ?>">
+			<span class="chc-result-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+			<?php if ( $passed ) : ?>
+				<path class="chc-result-mark" d="M20 6 9 17l-5-5"/>
+			<?php else : ?>
+				<path class="chc-result-mark" d="M18 6 6 18"/><path class="chc-result-mark" d="m6 6 12 12"/>
+			<?php endif; ?>
+			</svg></span>
 			<strong class="chc-result-status"><?php echo esc_html( self::result_title( $summary['status'] ) ); ?></strong>
-			<p class="chc-result-message"><?php echo esc_html( $message ); ?></p>
+			<?php if ( ! $passed ) : ?>
+				<p class="chc-result-message"><?php echo esc_html( $summary['message'] ); ?></p>
+			<?php endif; ?>
 		</div>
 		<?php
 	}
@@ -361,15 +369,8 @@ final class Cron_Health_Check {
 	 */
 	public static function result_title( string $status ): string {
 		return 'passed' === $status
-			? __( 'Health Check Passed!', 'cron-health-check' )
-			: __( 'Health Check Failed!', 'cron-health-check' );
-	}
-
-	/**
-	 * Static message shown when every step passed.
-	 */
-	public static function passed_message(): string {
-		return __( 'WP-Cron is enabled, no events are overdue, and a test event was scheduled and actually ran on this site.', 'cron-health-check' );
+			? __( 'Health Check Passed', 'cron-health-check' )
+			: __( 'Health Check Failed', 'cron-health-check' );
 	}
 
 	// ---------------------------------------------------------------------

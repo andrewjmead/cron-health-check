@@ -266,30 +266,100 @@
 .chc-result-card {
 	border: 1px solid;
 	border-radius: 6px;
-	padding: 16px 20px;
+	padding: 40px 24px 44px;
+	text-align: center;
 	color: #1a1a1a;
+	animation: chc-fade-in .4s ease-out both;
 }
 
 .chc-result-card.chc-status-passed {
-	background: #e8f5ec;
-	border-color: #8fcaa0;
+	background: #f2faf4;
+	border-color: #bfe3ca;
 }
 
 .chc-result-card.chc-status-failed {
-	background: #fbeae8;
-	border-color: #e6aca6;
+	background: #fdf3f2;
+	border-color: #ecc4c0;
+}
+
+.chc-result-badge {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 72px;
+	height: 72px;
+	margin: 0 auto 18px;
+	border-radius: 50%;
+	color: #fff;
+	animation: chc-badge-pop .5s cubic-bezier(.34, 1.56, .64, 1) both;
+}
+
+.chc-status-passed .chc-result-badge {
+	background: #1e8e3e;
+	box-shadow: 0 0 0 10px #dcf0e2;
+}
+
+.chc-status-failed .chc-result-badge {
+	background: #b3261e;
+	box-shadow: 0 0 0 10px #f6dcd9;
+}
+
+.chc-result-badge svg {
+	display: block;
+	width: 36px;
+	height: 36px;
+}
+
+.chc-result-mark {
+	stroke-dasharray: 32;
+	stroke-dashoffset: 32;
+	animation: chc-draw .35s ease-out .3s forwards;
 }
 
 .chc-result-status {
 	display: block;
-	font-size: 15px;
+	font-size: 20px;
+	font-weight: 600;
 	line-height: 1.3;
 }
 
+.chc-status-passed .chc-result-status {
+	color: #1e8e3e;
+}
+
+.chc-status-failed .chc-result-status {
+	color: #b3261e;
+}
+
 .chc-result-message {
-	margin: 4px 0 0;
+	max-width: 520px;
+	margin: 8px auto 0;
 	font-size: 14px;
 	line-height: 1.5;
+	color: #3a3a3a;
+}
+
+@keyframes chc-fade-in {
+	from { opacity: 0; transform: translateY(6px); }
+	to { opacity: 1; transform: none; }
+}
+
+@keyframes chc-badge-pop {
+	from { transform: scale(.4); opacity: 0; }
+	to { transform: scale(1); opacity: 1; }
+}
+
+@keyframes chc-draw {
+	to { stroke-dashoffset: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.chc-result-card,
+	.chc-result-badge,
+	.chc-result-mark {
+		animation: none;
+		stroke-dashoffset: 0;
+	}
 }
 
 .chc-lock-action {

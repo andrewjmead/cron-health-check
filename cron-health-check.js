@@ -105,10 +105,14 @@
 			return;
 		}
 		var passed = test.status === 'passed';
+		var icon = passed
+			? '<path class="chc-result-mark" d="M20 6 9 17l-5-5"/>'
+			: '<path class="chc-result-mark" d="M18 6 6 18"/><path class="chc-result-mark" d="m6 6 12 12"/>';
 		result.innerHTML =
 			'<div class="chc-result-card chc-status-' + ( passed ? 'passed' : 'failed' ) + '">' +
+				'<span class="chc-result-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' + icon + '</svg></span>' +
 				'<strong class="chc-result-status">' + esc( t( passed ? 'passedTitle' : 'failedTitle' ) ) + '</strong>' +
-				'<p class="chc-result-message">' + esc( passed ? t( 'passedMessage' ) : failureDetail( test ) ) + '</p>' +
+				( passed ? '' : '<p class="chc-result-message">' + esc( failureDetail( test ) ) + '</p>' ) +
 			'</div>';
 	}
 
