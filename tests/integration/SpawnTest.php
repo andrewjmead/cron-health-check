@@ -111,11 +111,12 @@ final class SpawnTest extends WP_UnitTestCase {
 	public function test_fired_but_overdue_events_fail_the_test() {
 		add_filter( 'chc_cron_disabled', '__return_false' );
 
+		// Schedule a bogus event far past the 30-minute grace before the run
+		// snapshots the overdue count.
+		wp_schedule_single_event( time() - 2 * HOUR_IN_SECONDS, 'chc_bogus_overdue' );
+
 		$instance = Cron_Health_Check::instance();
 		$test     = $instance->run_test();
-
-		// Schedule a bogus event far past the 30-minute grace.
-		wp_schedule_single_event( time() - 2 * HOUR_IN_SECONDS, 'chc_bogus_overdue' );
 
 		// Fire the test event as the spawned process would.
 		do_action( Cron_Health_Check::TEST_HOOK, $test['id'] );

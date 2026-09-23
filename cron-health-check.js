@@ -11,7 +11,7 @@
 	var diagnosticsCard = document.getElementById( 'chc-diagnostics-card' );
 	var pollTimer = null;
 
-	var STEPS = [ 'enabled', 'scheduled', 'spawning', 'waiting', 'overdue' ];
+	var STEPS = [ 'enabled', 'overdue', 'scheduled', 'spawning', 'waiting' ];
 
 	function t( key ) {
 		return i18n[ key ] || key;
@@ -46,15 +46,9 @@
 		steps.forEach( function ( step ) {
 			var idx = STEPS.indexOf( step.getAttribute( 'data-step' ) );
 			step.classList.remove( 'is-done', 'is-active', 'is-failed' );
-			if ( failIdx >= 0 ) {
-				if ( idx < failIdx ) {
-					step.classList.add( 'is-done' );
-				} else if ( idx === failIdx ) {
-					step.classList.add( 'is-failed' );
-				}
-				return;
-			}
-			if ( idx <= doneIdx ) {
+			if ( idx === failIdx ) {
+				step.classList.add( 'is-failed' );
+			} else if ( idx <= doneIdx || ( failIdx >= 0 && idx < failIdx ) ) {
 				step.classList.add( 'is-done' );
 			} else if ( step.getAttribute( 'data-step' ) === active ) {
 				step.classList.add( 'is-active' );
@@ -76,8 +70,11 @@
 		return 'waiting'; // timeout_no_fire, timeout_no_request, requestFailed
 	}
 
+	// The overdue snapshot is taken up front, but its verdict lands after the
+	// event fires; when that is the only failure the later steps still passed.
 	function failStepFor( test ) {
-		markSteps( null, null, stepForFailure( test ) );
+		var failed = stepForFailure( test );
+		markSteps( failed === 'overdue' && test && test.fired ? 'waiting' : null, null, failed );
 	}
 
 	function resetSteps() {
@@ -164,20 +161,12 @@
 		stopPolling();
 		render( test );
 		if ( test && test.status === 'passed' ) {
-			markSteps( 'overdue', null, null );
+			markSteps( 'waiting', null, null );
 		} else {
 			failStepFor( test );
 		}
 		setRunning( false );
 		refreshSections();
-	}
-
-	// Pause on the overdue-check step briefly so the user sees the verdict land.
-	function finishWithVerdict( test ) {
-		markSteps( 'waiting', 'overdue', null );
-		setTimeout( function () {
-			finish( test );
-		}, 500 );
 	}
 
 	function refreshSections() {
@@ -210,7 +199,7 @@
 		post( 'chc_test_status', function ( res ) {
 			var test = res && res.success ? res.data : null;
 			if ( test && test.status && test.status !== 'running' ) {
-				finishWithVerdict( test );
+				finish( test );
 				return;
 			}
 			pollTimer = setTimeout( function () { poll( elapsed + 1 ); }, 1000 );
@@ -223,14 +212,15 @@
 			resetSteps();
 			setActive( 'enabled' );
 
-			// The start request covers enabled→scheduled→spawning in one round
-			// trip; tick the steps on a timer so the user sees the sequence.
+			// The start request covers enabled→overdue→scheduled→spawning in one
+			// round trip; tick the steps on a timer so the user sees the sequence.
 			var stagedDone = false;
-			setTimeout( function () { setActive( 'scheduled' ); }, 400 );
+			setTimeout( function () { setActive( 'overdue' ); }, 400 );
+			setTimeout( function () { setActive( 'scheduled' ); }, 800 );
 			setTimeout( function () {
 				setActive( 'spawning' );
 				stagedDone = true;
-			}, 800 );
+			}, 1200 );
 
 			post( 'chc_start_test', function ( res ) {
 				var proceed = function () {
@@ -248,7 +238,7 @@
 						return;
 					}
 					if ( test.status === 'passed' ) {
-						finishWithVerdict( test );
+						finish( test );
 						return;
 					}
 					markSteps( 'spawning', 'waiting', null );

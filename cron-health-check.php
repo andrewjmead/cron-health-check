@@ -238,10 +238,10 @@ final class Cron_Health_Check {
 
 				<ol class="chc-stepper" id="chc-stepper">
 					<li class="chc-step" data-step="enabled"><span class="chc-dot"></span><span class="chc-step-label"><?php esc_html_e( 'Checking that WP-Cron is enabled', 'cron-health-check' ); ?></span></li>
+					<li class="chc-step" data-step="overdue"><span class="chc-dot"></span><span class="chc-step-label"><?php esc_html_e( 'Checking for overdue events', 'cron-health-check' ); ?></span></li>
 					<li class="chc-step" data-step="scheduled"><span class="chc-dot"></span><span class="chc-step-label"><?php esc_html_e( 'Scheduling test event', 'cron-health-check' ); ?></span></li>
 					<li class="chc-step" data-step="spawning"><span class="chc-dot"></span><span class="chc-step-label"><?php esc_html_e( 'Spawning cron', 'cron-health-check' ); ?></span></li>
 					<li class="chc-step" data-step="waiting"><span class="chc-dot"></span><span class="chc-step-label"><?php esc_html_e( 'Waiting for event to fire', 'cron-health-check' ); ?></span></li>
-					<li class="chc-step" data-step="overdue"><span class="chc-dot"></span><span class="chc-step-label"><?php esc_html_e( 'Checking for overdue events', 'cron-health-check' ); ?></span></li>
 				</ol>
 
 				<div id="chc-result" class="chc-result" aria-live="polite">
@@ -590,6 +590,7 @@ final class Cron_Health_Check {
 			'lock_cleared'  => $lock_cleared,
 			'lock_age'      => $lock_age,
 		);
+		$test = $this->with_overdue( $test );
 		update_option( self::OPTION, $test, false );
 
 		wp_schedule_single_event( time() - 1, self::TEST_HOOK, array( $id ) );
@@ -629,16 +630,22 @@ final class Cron_Health_Check {
 	}
 
 	/**
-	 * Compute the current overdue counts and fold them into the test record.
+	 * Fold the overdue counts into the test record and apply the verdict.
+	 *
+	 * The counts are snapshotted once, before the test event is scheduled and
+	 * spawned, so the spawn itself cannot change what is reported.
 	 *
 	 * @param array $test Test record.
 	 * @return array
 	 */
 	private function with_overdue( array $test ): array {
-		$rows       = self::get_event_rows();
-		$parts      = self::partition_overdue( $rows, time(), self::OVERDUE_GRACE );
-		$oldest_age = empty( $parts['overdue'] ) ? 0 : time() - (int) $parts['overdue'][0]['timestamp'];
-		return self::apply_overdue_verdict( $test, count( $parts['overdue'] ), $oldest_age, self::OVERDUE_GRACE );
+		if ( ! isset( $test['overdue'], $test['overdue_oldest'] ) ) {
+			$rows                   = self::get_event_rows();
+			$parts                  = self::partition_overdue( $rows, time(), self::OVERDUE_GRACE );
+			$test['overdue']        = count( $parts['overdue'] );
+			$test['overdue_oldest'] = empty( $parts['overdue'] ) ? 0 : time() - (int) $parts['overdue'][0]['timestamp'];
+		}
+		return self::apply_overdue_verdict( $test, (int) $test['overdue'], (int) $test['overdue_oldest'], self::OVERDUE_GRACE );
 	}
 
 	/**
