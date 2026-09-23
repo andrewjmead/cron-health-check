@@ -62,8 +62,53 @@ final class OverdueVerdictTest extends CHC_Unit_TestCase {
 		$this->assertSame( 3, $test['overdue'] );
 		$this->assertSame( 7200, $test['overdue_oldest'] );
 		$this->assertStringContainsString( '3', $test['message'] );
+		$this->assertStringContainsString( 'WP-Cron has not been keeping up', $test['message'] );
 		$this->assertSame( 1.8, $test['duration'] );
 		$this->assertSame( 'loopback', $test['source'] );
+	}
+
+	/**
+	 * A still-running record fails on overdue before the event is scheduled.
+	 */
+	public function test_running_with_overdue_fails() {
+		Brain\Monkey\Functions\when( '_n' )->alias(
+			function ( $single, $plural, $n ) {
+				return 1 === $n ? $single : $plural;
+			}
+		);
+
+		$running = array(
+			'id'      => 'x',
+			'started' => 1000,
+			'fired'   => null,
+			'status'  => 'running',
+			'reason'  => null,
+		);
+
+		$test = Cron_Health_Check::apply_overdue_verdict( $running, 1, 3600, 1800 );
+
+		$this->assertSame( 'failed', $test['status'] );
+		$this->assertSame( 'overdue', $test['reason'] );
+		$this->assertStringContainsString( '1 scheduled event is overdue', $test['message'] );
+	}
+
+	/**
+	 * A running record with no overdue events stays running.
+	 */
+	public function test_running_no_overdue_stays_running() {
+		$running = array(
+			'id'      => 'x',
+			'started' => 1000,
+			'fired'   => null,
+			'status'  => 'running',
+			'reason'  => null,
+		);
+
+		$test = Cron_Health_Check::apply_overdue_verdict( $running, 0, 0, 1800 );
+
+		$this->assertSame( 'running', $test['status'] );
+		$this->assertNull( $test['reason'] );
+		$this->assertSame( 0, $test['overdue'] );
 	}
 
 	/**

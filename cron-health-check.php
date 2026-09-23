@@ -88,7 +88,7 @@ final class Cron_Health_Check {
 	}
 
 	/**
-	 * Add a "Run a Cron Health Check" link to the plugin row on the Plugins screen.
+	 * Add a "Use Tool" link to the plugin row on the Plugins screen.
 	 *
 	 * @param string[] $links Existing action links.
 	 * @return string[]
@@ -97,7 +97,7 @@ final class Cron_Health_Check {
 		$link = sprintf(
 			'<a href="%s">%s</a>',
 			esc_url( self::page_url() ),
-			esc_html__( 'Run a Cron Health Check', 'cron-health-check' )
+			esc_html__( 'Use Tool', 'cron-health-check' )
 		);
 		array_unshift( $links, $link );
 		return $links;
@@ -235,6 +235,7 @@ final class Cron_Health_Check {
 					/* translators: 1: overdue event count, 2: minutes the oldest event is late. */
 					'overdueSome'       => __( '%1$s cron event(s) are more than 30 minutes overdue (oldest: %2$s min).', 'cron-health-check' ),
 					'scheduledOk'       => __( 'Scheduled a one-off test event.', 'cron-health-check' ),
+					'scheduleFailed'    => __( 'Could not schedule the test event.', 'cron-health-check' ),
 					/* translators: %s: HTTP status code. */
 					'spawnOk'           => __( 'spawn_cron() sent the loopback request to wp-cron.php (HTTP %s).', 'cron-health-check' ),
 					'spawnSent'         => __( 'spawn_cron() sent the loopback request to wp-cron.php.', 'cron-health-check' ),
@@ -586,7 +587,25 @@ final class Cron_Health_Check {
 		$test = $this->with_overdue( $test );
 		update_option( self::OPTION, $test, false );
 
-		wp_schedule_single_event( time() - 1, self::TEST_HOOK, array( $id ) );
+		// Overdue events fail the check before anything is scheduled or spawned.
+		if ( 'failed' === $test['status'] ) {
+			return $test;
+		}
+
+		$scheduled = wp_schedule_single_event( time() - 1, self::TEST_HOOK, array( $id ), true );
+		if ( true !== $scheduled ) {
+			$test['status']  = 'failed';
+			$test['reason']  = 'schedule';
+			$test['message'] = '' !== $scheduled->get_error_message()
+				? sprintf(
+					/* translators: %s: error message. */
+					__( 'WordPress refused to schedule the test event: %s', 'cron-health-check' ),
+					$scheduled->get_error_message()
+				)
+				: __( 'WordPress refused to schedule the test event. Another plugin may be blocking cron scheduling (pre_schedule_event / schedule_event filters).', 'cron-health-check' );
+			update_option( self::OPTION, $test, false );
+			return $test;
+		}
 
 		if ( self::is_alternate_cron() ) {
 			$this->spawn = array( 'alternate' => true );
@@ -617,7 +636,20 @@ final class Cron_Health_Check {
 			$test = $fresh;
 		}
 		$test['spawn'] = $this->spawn;
-		$test          = $this->with_overdue( $test );
+
+		// A loopback failure that never fired the event fails immediately;
+		// an event that fired first still passes.
+		if (
+			null === ( $test['fired'] ?? null )
+			&& is_array( $this->spawn )
+			&& ( ! empty( $this->spawn['error'] ) || ( ! empty( $this->spawn['code'] ) && (int) $this->spawn['code'] >= 400 ) )
+		) {
+			$test['status']  = 'failed';
+			$test['reason']  = 'spawn';
+			$test['message'] = self::timeout_message( $this->spawn, self::test_timeout() );
+		}
+
+		$test = $this->with_overdue( $test );
 		update_option( self::OPTION, $test, false );
 		return $test;
 	}
@@ -1033,7 +1065,7 @@ final class Cron_Health_Check {
 		$test['overdue']        = $overdue;
 		$test['overdue_oldest'] = $oldest_age;
 
-		if ( 'passed' === ( $test['status'] ?? '' ) && $overdue > 0 ) {
+		if ( in_array( $test['status'] ?? '', array( 'passed', 'running' ), true ) && $overdue > 0 ) {
 			$oldest_text     = function_exists( 'human_time_diff' )
 				? human_time_diff( time() - $oldest_age )
 				: sprintf( '%ds', $oldest_age );
@@ -1042,8 +1074,8 @@ final class Cron_Health_Check {
 			$test['message'] = sprintf(
 				/* translators: 1: overdue event count, 2: grace in minutes, 3: how late the oldest event is. */
 				_n(
-					'Cron fired, but %1$d scheduled event is overdue by more than %2$d minutes (oldest: %3$s late). Cron is running now but has not been keeping up.',
-					'Cron fired, but %1$d scheduled events are overdue by more than %2$d minutes (oldest: %3$s late). Cron is running now but has not been keeping up.',
+					'%1$d scheduled event is overdue by more than %2$d minutes (oldest: %3$s late). WP-Cron has not been keeping up on this site.',
+					'%1$d scheduled events are overdue by more than %2$d minutes (oldest: %3$s late). WP-Cron has not been keeping up on this site.',
 					$overdue,
 					'cron-health-check'
 				),
