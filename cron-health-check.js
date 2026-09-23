@@ -7,8 +7,6 @@
 	var result = document.getElementById( 'chc-result' );
 	var steps = document.querySelectorAll( '#chc-stepper .chc-step' );
 	var clearLock = document.getElementById( 'chc-clear-lock' );
-	var diagnosticsButton = document.getElementById( 'chc-show-diagnostics' );
-	var diagnosticsCard = document.getElementById( 'chc-diagnostics-card' );
 	var pollTimer = null;
 
 	function t( key ) {
@@ -127,21 +125,6 @@
 		}
 		render( test );
 		setRunning( false );
-		refreshSections();
-	}
-
-	function refreshSections() {
-		fetch( window.location.href, { credentials: 'same-origin' } )
-			.then( function ( r ) { return r.text(); } )
-			.then( function ( html ) {
-				var doc = new DOMParser().parseFromString( html, 'text/html' );
-				var newDiag = doc.querySelector( '.chc-diagnostics' );
-				var oldDiag = document.querySelector( '.chc-diagnostics' );
-				if ( newDiag && oldDiag ) {
-					oldDiag.innerHTML = newDiag.innerHTML;
-				}
-			} )
-			.catch( function () {} );
 	}
 
 	function stopPolling() {
@@ -277,10 +260,4 @@
 		} );
 	}
 
-	if ( diagnosticsButton && diagnosticsCard ) {
-		diagnosticsButton.addEventListener( 'click', function () {
-			diagnosticsCard.removeAttribute( 'hidden' );
-			diagnosticsButton.remove();
-		} );
-	}
 } )();

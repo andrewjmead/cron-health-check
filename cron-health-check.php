@@ -259,10 +259,9 @@ final class Cron_Health_Check {
 		// The result only lives for the duration of a run; nothing persists across page loads.
 		delete_option( self::OPTION );
 
-		$now         = time();
-		$summary     = self::summarize_test( null, $now, self::test_timeout() );
-		$diagnostics = self::get_diagnostics();
-		$lock        = self::lock_state( self::get_lock(), microtime( true ), self::lock_timeout() );
+		$now     = time();
+		$summary = self::summarize_test( null, $now, self::test_timeout() );
+		$lock    = self::lock_state( self::get_lock(), microtime( true ), self::lock_timeout() );
 		?>
 		<div class="wrap chc-wrap">
 			<section class="chc-card chc-test-panel">
@@ -315,22 +314,6 @@ final class Cron_Health_Check {
 				<?php endif; ?>
 			</section>
 
-			<button type="button" id="chc-show-diagnostics" class="chc-link-button"><?php esc_html_e( 'Show advanced diagnostics', 'cron-health-check' ); ?></button>
-			<section class="chc-card chc-diagnostics-card" id="chc-diagnostics-card" hidden>
-				<h2><?php esc_html_e( 'Diagnostics', 'cron-health-check' ); ?></h2>
-				<ul class="chc-diagnostics">
-					<?php foreach ( $diagnostics as $row ) : ?>
-						<li class="chc-diagnostic chc-status-<?php echo esc_attr( $row['status'] ); ?>">
-							<span class="chc-diagnostic-label"><?php echo esc_html( $row['label'] ); ?></span>
-							<span class="chc-diagnostic-message"><?php echo esc_html( $row['message'] ); ?></span>
-							<?php if ( ! empty( $row['hint'] ) ) : ?>
-								<span class="chc-diagnostic-hint"><?php echo esc_html( $row['hint'] ); ?></span>
-							<?php endif; ?>
-						</li>
-					<?php endforeach; ?>
-				</ul>
-			</section>
-
 		</div>
 		<?php
 	}
@@ -374,7 +357,7 @@ final class Cron_Health_Check {
 	}
 
 	// ---------------------------------------------------------------------
-	// Events + diagnostics data.
+	// Events data.
 	// ---------------------------------------------------------------------
 
 	/**
@@ -406,124 +389,6 @@ final class Cron_Health_Check {
 			return null;
 		}
 		return (float) $lock;
-	}
-
-	/**
-	 * Diagnostics rows: status, label, message, hint.
-	 *
-	 * @return array[]
-	 */
-	public static function get_diagnostics(): array {
-		$rows = array();
-
-		$disabled = self::is_cron_disabled();
-		$rows[]   = array(
-			'status'  => $disabled ? 'fail' : 'ok',
-			'label'   => 'DISABLE_WP_CRON',
-			'message' => $disabled
-				? __( 'Cron is disabled; WordPress will never trigger events itself.', 'cron-health-check' )
-				: __( 'Not set — WordPress can trigger cron normally.', 'cron-health-check' ),
-			'hint'    => $disabled
-				? __( 'Point a system cron at wp-cron.php, or remove the constant.', 'cron-health-check' )
-				: '',
-		);
-
-		$alt    = self::is_alternate_cron();
-		$rows[] = array(
-			'status'  => $alt ? 'warn' : 'ok',
-			'label'   => 'ALTERNATE_WP_CRON',
-			'message' => $alt
-				? __( 'Cron runs via a redirect on front-end page loads.', 'cron-health-check' )
-				: __( 'Not set.', 'cron-health-check' ),
-			'hint'    => $alt ? __( 'Low-traffic sites may see events fire late.', 'cron-health-check' ) : '',
-		);
-
-		$lock_state = self::lock_state( self::get_lock(), microtime( true ), self::lock_timeout() );
-		if ( 'none' === $lock_state['state'] ) {
-			$rows[] = array(
-				'status'  => 'ok',
-				'label'   => __( 'Cron lock', 'cron-health-check' ),
-				'message' => __( 'No doing_cron lock is held.', 'cron-health-check' ),
-				'hint'    => '',
-			);
-		} elseif ( 'stale' === $lock_state['state'] ) {
-			$rows[] = array(
-				'status'  => 'fail',
-				'label'   => __( 'Cron lock', 'cron-health-check' ),
-				'message' => sprintf(
-					/* translators: %d: lock age in seconds. */
-					__( 'A stale doing_cron lock has been held for %ds and blocks new spawns.', 'cron-health-check' ),
-					(int) $lock_state['age']
-				),
-				'hint'    => __( 'Use “Clear cron lock and retry” above, or delete the doing_cron transient.', 'cron-health-check' ),
-			);
-		} else {
-			$rows[] = array(
-				'status'  => 'warn',
-				'label'   => __( 'Cron lock', 'cron-health-check' ),
-				'message' => sprintf(
-					/* translators: %d: lock age in seconds. */
-					__( 'A doing_cron lock was set %ds ago; a spawn is likely in progress.', 'cron-health-check' ),
-					(int) $lock_state['age']
-				),
-				'hint'    => __( 'The test clears the lock before spawning, so it will not block a run.', 'cron-health-check' ),
-			);
-		}
-
-		$rows[] = array(
-			'status'  => 'info',
-			'label'   => 'WP_CRON_LOCK_TIMEOUT',
-			'message' => sprintf(
-				/* translators: %d: timeout in seconds. */
-				__( '%d seconds.', 'cron-health-check' ),
-				self::lock_timeout()
-			),
-			'hint'    => '',
-		);
-
-		$cron  = get_option( 'cron', array() );
-		$count = 0;
-		$size  = 0;
-		if ( is_array( $cron ) ) {
-			foreach ( $cron as $timestamp => $hooks ) {
-				if ( ! is_array( $hooks ) ) {
-					continue;
-				}
-				foreach ( $hooks as $events ) {
-					$count += count( (array) $events );
-				}
-			}
-			$size = strlen( maybe_serialize( $cron ) );
-		}
-		$status = $size > 500000 ? 'warn' : 'info';
-		$rows[] = array(
-			'status'  => $status,
-			'label'   => __( 'cron option', 'cron-health-check' ),
-			'message' => sprintf(
-				/* translators: 1: event count, 2: option size in bytes. */
-				__( '%1$d events, %2$s serialized.', 'cron-health-check' ),
-				$count,
-				size_format( $size )
-			),
-			'hint'    => $size > 500000 ? __( 'A very large cron option can slow every page load.', 'cron-health-check' ) : '',
-		);
-
-		$wp_timestamp = (int) current_time( 'timestamp' ); // phpcs:ignore WordPress.DateTime.CurrentTimeTimestamp -- comparing server vs WP time is the point.
-		$tz           = wp_timezone_string();
-		$rows[]       = array(
-			'status'  => 'info',
-			'label'   => __( 'Server time', 'cron-health-check' ),
-			'message' => sprintf(
-				/* translators: 1: server time, 2: WP-local time, 3: timezone. */
-				__( 'Server: %1$s — WordPress: %2$s (%3$s).', 'cron-health-check' ),
-				gmdate( 'Y-m-d H:i:s' ),
-				wp_date( 'Y-m-d H:i:s', $wp_timestamp ),
-				$tz
-			),
-			'hint'    => '',
-		);
-
-		return $rows;
 	}
 
 	// ---------------------------------------------------------------------
