@@ -327,6 +327,102 @@
 	color: #3a3a3a;
 }
 
+/* Failed card: compact, left-aligned, with report */
+.chc-result-card.chc-status-failed {
+	text-align: left;
+	padding: 24px;
+}
+
+.chc-result-head {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.chc-status-failed .chc-result-badge {
+	width: 28px;
+	height: 28px;
+	margin: 0;
+	flex: 0 0 auto;
+	box-shadow: 0 0 0 4px #f6dcd9;
+}
+
+.chc-status-failed .chc-result-badge svg {
+	width: 16px;
+	height: 16px;
+}
+
+.chc-status-failed .chc-result-message {
+	max-width: none;
+	margin: 12px 0 0;
+}
+
+.chc-result-actions {
+	display: flex;
+	gap: 8px;
+	margin-top: 16px;
+}
+
+.chc-report-wrap {
+	margin-top: 16px;
+	padding-top: 16px;
+	border-top: 1px solid #ecc4c0;
+}
+
+.chc-report {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.chc-report-row {
+	display: flex;
+	align-items: flex-start;
+	gap: 12px;
+	margin: 0 0 10px;
+	font-size: 13px;
+	line-height: 1.5;
+}
+
+.chc-report-row:last-child {
+	margin-bottom: 0;
+}
+
+.chc-report-state {
+	flex: 0 0 64px;
+	font-weight: 600;
+	font-size: 12px;
+	line-height: 19px;
+	color: #6a6a6a;
+}
+
+.chc-report-row.is-passed .chc-report-state {
+	color: #2662eb;
+}
+
+.chc-report-row.is-failed .chc-report-state {
+	color: #b3261e;
+}
+
+.chc-report-body {
+	display: block;
+}
+
+.chc-report-label {
+	display: block;
+	color: #1a1a1a;
+	font-weight: 500;
+}
+
+.chc-report-row.is-skipped .chc-report-label {
+	color: #6a6a6a;
+}
+
+.chc-report-text {
+	display: block;
+	color: #3a3a3a;
+}
+
 @keyframes chc-fade-in {
 	from { opacity: 0; transform: translateY(6px); }
 	to { opacity: 1; transform: none; }

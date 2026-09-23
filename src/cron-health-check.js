@@ -96,6 +96,74 @@
 		return ( test && test.message ) || t( 'neverRan' );
 	}
 
+	// One entry per step: { num, label, state: 'passed'|'failed'|'skipped', text }.
+	function stepReport() {
+		var rows = [];
+		steps.forEach( function ( step, i ) {
+			var label = step.querySelector( '.chc-step-label' );
+			var status = step.querySelector( '.chc-step-status' );
+			var state = 'skipped';
+			if ( step.classList.contains( 'is-done' ) ) { state = 'passed'; }
+			if ( step.classList.contains( 'is-failed' ) ) { state = 'failed'; }
+			rows.push( {
+				num: i + 1,
+				label: label ? label.textContent : '',
+				state: state,
+				text: status ? status.textContent : ''
+			} );
+		} );
+		return rows;
+	}
+
+	function stateLabel( state ) {
+		if ( 'passed' === state ) { return t( 'statusPassed' ); }
+		if ( 'failed' === state ) { return t( 'statusFailed' ); }
+		return t( 'statusSkipped' );
+	}
+
+	function reportText( test ) {
+		var lines = [
+			fmt( t( 'reportHeader' ), data.homeUrl || '', data.wpVersion || '', data.version || '' ),
+			t( test.status === 'passed' ? 'passedTitle' : 'failedTitle' ),
+			''
+		];
+		stepReport().forEach( function ( row ) {
+			lines.push( row.num + '. ' + row.label + ' - ' + stateLabel( row.state ) );
+			if ( row.text ) { lines.push( '   ' + row.text ); }
+		} );
+		return lines.join( '\n' );
+	}
+
+	function reportHtml() {
+		var html = '<ol class="chc-report">';
+		stepReport().forEach( function ( row ) {
+			html += '<li class="chc-report-row is-' + row.state + '">' +
+				'<span class="chc-report-state">' + esc( stateLabel( row.state ) ) + '</span>' +
+				'<span class="chc-report-body"><span class="chc-report-label">' + esc( row.label ) + '</span>' +
+				( row.text ? '<span class="chc-report-text">' + esc( row.text ) + '</span>' : '' ) +
+				'</span></li>';
+		} );
+		return html + '</ol>';
+	}
+
+	function copyText( text, onDone ) {
+		if ( navigator.clipboard && navigator.clipboard.writeText ) {
+			navigator.clipboard.writeText( text ).then( function () { onDone( true ); }, function () { onDone( false ); } );
+			return;
+		}
+		var ta = document.createElement( 'textarea' );
+		ta.value = text;
+		ta.setAttribute( 'readonly', '' );
+		ta.style.position = 'fixed';
+		ta.style.opacity = '0';
+		document.body.appendChild( ta );
+		ta.select();
+		var ok = false;
+		try { ok = document.execCommand( 'copy' ); } catch ( e ) { ok = false; }
+		document.body.removeChild( ta );
+		onDone( ok );
+	}
+
 	function render( test ) {
 		if ( ! result ) { return; }
 		if ( ! test || ( test.status !== 'passed' && test.status !== 'failed' ) ) {
@@ -106,12 +174,40 @@
 		var icon = passed
 			? '<path class="chc-result-mark" d="m4 12 5 5L20 6"/>'
 			: '<path class="chc-result-mark" d="M18 6 6 18"/><path class="chc-result-mark" d="m6 6 12 12"/>';
+		var badge = '<span class="chc-result-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' + icon + '</svg></span>';
+		var title = '<strong class="chc-result-status">' + esc( t( passed ? 'passedTitle' : 'failedTitle' ) ) + '</strong>';
+
+		if ( passed ) {
+			result.innerHTML = '<div class="chc-result-card chc-status-passed">' + badge + title + '</div>';
+			return;
+		}
+
 		result.innerHTML =
-			'<div class="chc-result-card chc-status-' + ( passed ? 'passed' : 'failed' ) + '">' +
-				'<span class="chc-result-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' + icon + '</svg></span>' +
-				'<strong class="chc-result-status">' + esc( t( passed ? 'passedTitle' : 'failedTitle' ) ) + '</strong>' +
-				( passed ? '' : '<p class="chc-result-message">' + esc( failureDetail( test ) ) + '</p>' ) +
+			'<div class="chc-result-card chc-status-failed">' +
+				'<div class="chc-result-head">' + badge + title + '</div>' +
+				'<p class="chc-result-message">' + esc( failureDetail( test ) ) + '</p>' +
+				'<div class="chc-result-actions">' +
+					'<button type="button" class="button chc-report-toggle" aria-expanded="false">' + esc( t( 'viewReport' ) ) + '</button>' +
+					'<button type="button" class="button chc-report-copy">' + esc( t( 'copyReport' ) ) + '</button>' +
+				'</div>' +
+				'<div class="chc-report-wrap" hidden>' + reportHtml() + '</div>' +
 			'</div>';
+
+		var toggle = result.querySelector( '.chc-report-toggle' );
+		var copy = result.querySelector( '.chc-report-copy' );
+		var wrap = result.querySelector( '.chc-report-wrap' );
+		toggle.addEventListener( 'click', function () {
+			var open = wrap.hasAttribute( 'hidden' );
+			if ( open ) { wrap.removeAttribute( 'hidden' ); } else { wrap.setAttribute( 'hidden', '' ); }
+			toggle.setAttribute( 'aria-expanded', open ? 'true' : 'false' );
+			toggle.textContent = t( open ? 'hideReport' : 'viewReport' );
+		} );
+		copy.addEventListener( 'click', function () {
+			copyText( reportText( test ), function ( ok ) {
+				copy.textContent = t( ok ? 'copied' : 'copyFailed' );
+				setTimeout( function () { copy.textContent = t( 'copyReport' ); }, 2000 );
+			} );
+		} );
 	}
 
 	function finish( test ) {

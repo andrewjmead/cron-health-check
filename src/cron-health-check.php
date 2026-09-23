@@ -233,12 +233,14 @@ final class Cron_Health_Check {
 			'cron-health-check',
 			'chcData',
 			array(
-				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
-				'nonce'   => wp_create_nonce( 'chc_nonce' ),
-				'timeout' => self::test_timeout(),
-				'altCron' => self::is_alternate_cron(),
-				'homeUrl' => home_url( '/' ),
-				'i18n'    => array(
+				'ajaxUrl'   => admin_url( 'admin-ajax.php' ),
+				'nonce'     => wp_create_nonce( 'chc_nonce' ),
+				'timeout'   => self::test_timeout(),
+				'altCron'   => self::is_alternate_cron(),
+				'homeUrl'   => home_url( '/' ),
+				'wpVersion' => get_bloginfo( 'version' ),
+				'version'   => CHC_VERSION,
+				'i18n'      => array(
 					'failed'            => __( 'Failed', 'cron-health-check' ),
 					'passedTitle'       => self::result_title( 'passed' ),
 					'failedTitle'       => self::result_title( 'failed' ),
@@ -250,6 +252,16 @@ final class Cron_Health_Check {
 					/* translators: %s: duration in seconds. */
 					'firedInNoSource'   => __( 'Cron fired in %ss.', 'cron-health-check' ),
 					'neverRan'          => __( 'The event was scheduled but never ran.', 'cron-health-check' ),
+					'viewReport'        => __( 'View report', 'cron-health-check' ),
+					'hideReport'        => __( 'Hide report', 'cron-health-check' ),
+					'copyReport'        => __( 'Copy report', 'cron-health-check' ),
+					'copied'            => __( 'Copied', 'cron-health-check' ),
+					'copyFailed'        => __( 'Copy failed', 'cron-health-check' ),
+					'statusPassed'      => __( 'Passed', 'cron-health-check' ),
+					'statusFailed'      => __( 'Failed', 'cron-health-check' ),
+					'statusSkipped'     => __( 'Not run', 'cron-health-check' ),
+					/* translators: 1: site URL, 2: WordPress version, 3: plugin version. */
+					'reportHeader'      => __( 'Cron Health Check report for %1$s (WordPress %2$s, plugin %3$s)', 'cron-health-check' ),
 					'disabledUndefined' => __( 'The option DISABLE_WP_CRON is not defined. WP-Cron is enabled.', 'cron-health-check' ),
 					'disabledFalse'     => __( 'The option DISABLE_WP_CRON is set to false. WP-Cron is enabled.', 'cron-health-check' ),
 					'disabledTrue'      => __( 'The option DISABLE_WP_CRON is set to true. WP-Cron is disabled and WordPress will not be able to run cron events.', 'cron-health-check' ),
