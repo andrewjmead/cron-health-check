@@ -6,3 +6,4 @@ package-lock.json
 .phpunit.result.cache
 .phpcs-cache
 phpstan-cache/
+.wp-env.override.json
