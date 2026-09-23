@@ -95,7 +95,7 @@
 }
 
 .chc-result:not(:empty) {
-	margin-top: 20px;
+	margin-top: 24px;
 }
 
 .chc-step {
@@ -288,7 +288,7 @@
 	justify-content: center;
 	width: 72px;
 	height: 72px;
-	margin: 0 auto 18px;
+	margin: 0 auto 24px;
 	border-radius: 50%;
 	color: #fff;
 	animation: chc-badge-pop .5s cubic-bezier(.34, 1.56, .64, 1) both;
@@ -318,7 +318,7 @@
 
 .chc-result-status {
 	display: block;
-	font-size: 20px;
+	font-size: 18px;
 	font-weight: 600;
 	line-height: 1.3;
 }

@@ -272,7 +272,7 @@ final class Cron_Health_Check {
 				</header>
 
 				<button type="button" id="chc-run-test" class="chc-button">
-					<?php esc_html_e( 'Run A Health Check', 'cron-health-check' ); ?>
+					<?php esc_html_e( 'Run Cron Health Check', 'cron-health-check' ); ?>
 				</button>
 
 				<ol class="chc-stepper" id="chc-stepper">
@@ -369,8 +369,8 @@ final class Cron_Health_Check {
 	 */
 	public static function result_title( string $status ): string {
 		return 'passed' === $status
-			? __( 'Health Check Passed', 'cron-health-check' )
-			: __( 'Health Check Failed', 'cron-health-check' );
+			? __( 'Cron Health Check Passed', 'cron-health-check' )
+			: __( 'Cron Health Check Failed', 'cron-health-check' );
 	}
 
 	// ---------------------------------------------------------------------
