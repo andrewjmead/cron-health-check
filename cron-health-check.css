@@ -103,6 +103,7 @@
 	align-items: flex-start;
 	gap: 14px;
 	position: relative;
+	margin: 0;
 	padding-bottom: 20px;
 }
 
@@ -116,8 +117,7 @@
 	left: 15px;
 	top: 30px;
 	bottom: -2px;
-	width: 2px;
-	background: repeating-linear-gradient(to bottom, #d4d4d4 0 5px, transparent 5px 9px);
+	border-left: 2px dotted #d4d4d4;
 }
 
 .chc-step:last-child::before {
@@ -125,7 +125,7 @@
 }
 
 .chc-step.is-done::before {
-	background: #a9c2f3;
+	border-left: 2px solid #a9c2f3;
 }
 
 .chc-dot {
