@@ -15,6 +15,7 @@ final class SpawnTest extends WP_UnitTestCase {
 	 */
 	public function tear_down() {
 		wp_clear_scheduled_hook( Cron_Health_Check::TEST_HOOK );
+		wp_clear_scheduled_hook( 'chc_bogus_overdue' );
 		delete_option( Cron_Health_Check::OPTION );
 		parent::tear_down();
 	}
@@ -102,6 +103,93 @@ final class SpawnTest extends WP_UnitTestCase {
 		} else {
 			$this->assertSame( 'running', $test['status'] );
 		}
+	}
+
+	/**
+	 * A fired test still fails when an event is overdue by more than 30 minutes.
+	 */
+	public function test_fired_but_overdue_events_fail_the_test() {
+		add_filter( 'chc_cron_disabled', '__return_false' );
+
+		$instance = Cron_Health_Check::instance();
+		$test     = $instance->run_test();
+
+		// Schedule a bogus event far past the 30-minute grace.
+		wp_schedule_single_event( time() - 2 * HOUR_IN_SECONDS, 'chc_bogus_overdue' );
+
+		// Fire the test event as the spawned process would.
+		do_action( Cron_Health_Check::TEST_HOOK, $test['id'] );
+
+		$stored = get_option( Cron_Health_Check::OPTION );
+		$this->assertSame( 'passed', $stored['status'] );
+
+		// The verdict is applied when a final record is produced.
+		$final = $instance->finalize_test( $stored );
+
+		remove_filter( 'chc_cron_disabled', '__return_false' );
+		wp_clear_scheduled_hook( 'chc_bogus_overdue' );
+
+		$this->assertSame( 'failed', $final['status'] );
+		$this->assertSame( 'overdue', $final['reason'] );
+		$this->assertSame( 1, $final['overdue'] );
+		$this->assertGreaterThan( 2 * HOUR_IN_SECONDS - 1, $final['overdue_oldest'] );
+	}
+
+	/**
+	 * A fired test with no overdue events passes with overdue === 0.
+	 */
+	public function test_fired_no_overdue_passes() {
+		add_filter( 'chc_cron_disabled', '__return_false' );
+
+		$instance = Cron_Health_Check::instance();
+		$test     = $instance->run_test();
+
+		do_action( Cron_Health_Check::TEST_HOOK, $test['id'] );
+		$stored = get_option( Cron_Health_Check::OPTION );
+		$final  = $instance->finalize_test( $stored );
+
+		remove_filter( 'chc_cron_disabled', '__return_false' );
+
+		$expected = count(
+			Cron_Health_Check::partition_overdue(
+				Cron_Health_Check::get_event_rows(),
+				time(),
+				Cron_Health_Check::OVERDUE_GRACE
+			)['overdue']
+		);
+
+		$this->assertSame( $expected, $final['overdue'] );
+		if ( 0 === $expected ) {
+			$this->assertSame( 'passed', $final['status'] );
+			$this->assertSame( 0, $final['overdue'] );
+		} else {
+			$this->assertSame( 'overdue', $final['reason'] );
+		}
+	}
+
+	/**
+	 * render_page() deletes the stored test so results never persist across loads.
+	 */
+	public function test_render_page_deletes_option() {
+		update_option(
+			Cron_Health_Check::OPTION,
+			array(
+				'id'      => 'x',
+				'started' => time(),
+				'status'  => 'passed',
+			),
+			false
+		);
+
+		$admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $admin_id );
+
+		ob_start();
+		Cron_Health_Check::instance()->render_page();
+		ob_end_clean();
+
+		$this->assertFalse( get_option( Cron_Health_Check::OPTION, false ) );
+		wp_set_current_user( 0 );
 	}
 
 	/**

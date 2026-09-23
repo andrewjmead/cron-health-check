@@ -44,7 +44,7 @@ final class Cron_Health_Check {
 	 *
 	 * @var int
 	 */
-	const OVERDUE_GRACE = 60;
+	const OVERDUE_GRACE = 1800;
 
 	/**
 	 * Singleton instance.
@@ -177,9 +177,6 @@ final class Cron_Health_Check {
 			CHC_VERSION,
 			true
 		);
-		$test    = get_option( self::OPTION, null );
-		$summary = self::summarize_test( is_array( $test ) ? $test : null, time(), self::test_timeout() );
-
 		wp_localize_script(
 			'cron-health-check',
 			'chcData',
@@ -189,13 +186,12 @@ final class Cron_Health_Check {
 				'timeout' => self::test_timeout(),
 				'altCron' => self::is_alternate_cron(),
 				'homeUrl' => home_url( '/' ),
-				'resume'  => ( 'running' === $summary['status'] ),
 				'i18n'    => array(
 					'passed'          => __( 'Passed', 'cron-health-check' ),
 					'failed'          => __( 'Failed', 'cron-health-check' ),
 					'running'         => __( 'Running', 'cron-health-check' ),
 					'unknown'         => __( 'Unknown', 'cron-health-check' ),
-					'noTest'          => __( 'No test has been run yet.', 'cron-health-check' ),
+					'noTest'          => __( 'Run the test to check whether WP-Cron fires on this site.', 'cron-health-check' ),
 					'requestFailed'   => __( 'Request failed. Check your connection and try again.', 'cron-health-check' ),
 					'couldNotStart'   => __( 'Could not start the test.', 'cron-health-check' ),
 					'timeout'         => __( 'The event was scheduled but never ran.', 'cron-health-check' ),
@@ -207,9 +203,8 @@ final class Cron_Health_Check {
 					'isRunning'       => __( 'The test is running.', 'cron-health-check' ),
 					'duration'        => __( 'Duration', 'cron-health-check' ),
 					'source'          => __( 'Source', 'cron-health-check' ),
-					'ran'             => __( 'Ran', 'cron-health-check' ),
-					'justNow'         => __( 'just now', 'cron-health-check' ),
 					'loopback'        => __( 'Loopback', 'cron-health-check' ),
+					'overdue'         => __( 'Overdue events (>30 min)', 'cron-health-check' ),
 				),
 			)
 		);
@@ -223,20 +218,18 @@ final class Cron_Health_Check {
 			wp_die( esc_html__( 'You do not have permission to access this page.', 'cron-health-check' ) );
 		}
 
+		// The result only lives for the duration of a run; nothing persists across page loads.
+		delete_option( self::OPTION );
+
 		$now         = time();
-		$test        = get_option( self::OPTION, null );
-		$summary     = self::summarize_test( is_array( $test ) ? $test : null, $now, self::test_timeout() );
+		$summary     = self::summarize_test( null, $now, self::test_timeout() );
 		$diagnostics = self::get_diagnostics();
-		$rows        = self::get_event_rows();
-		$parts       = self::partition_overdue( $rows, $now, self::OVERDUE_GRACE );
-		$overdue     = $parts['overdue'];
-		$upcoming    = $parts['upcoming'];
 		$lock        = self::lock_state( self::get_lock(), microtime( true ), self::lock_timeout() );
 		?>
 		<div class="wrap chc-wrap">
 			<header class="chc-header">
 				<h1><?php esc_html_e( 'Cron Health Check', 'cron-health-check' ); ?></h1>
-				<p><?php esc_html_e( 'Run a one-time test to prove whether WP-Cron fires on this site, and see which scheduled events are overdue.', 'cron-health-check' ); ?></p>
+				<p><?php esc_html_e( 'Run a one-time test to prove WP-Cron fires on this site and that no scheduled events are overdue.', 'cron-health-check' ); ?></p>
 			</header>
 
 			<section class="chc-card chc-test-panel">
@@ -251,7 +244,7 @@ final class Cron_Health_Check {
 				</ol>
 
 				<div id="chc-result" class="chc-result" aria-live="polite">
-					<?php $this->render_result( $summary, $test ); ?>
+					<?php $this->render_result( $summary, null ); ?>
 				</div>
 
 				<?php if ( 'stale' === $lock['state'] ) : ?>
@@ -278,24 +271,6 @@ final class Cron_Health_Check {
 				</ul>
 			</section>
 
-			<section class="chc-card" id="chc-events-section">
-				<h2><?php esc_html_e( 'Scheduled events', 'cron-health-check' ); ?></h2>
-				<?php $this->render_overdue_headline( $overdue ); ?>
-				<?php $this->render_events_table( $overdue, true ); ?>
-				<?php if ( ! empty( $upcoming ) ) : ?>
-					<p>
-						<button type="button" id="chc-toggle-events" class="chc-button chc-button-secondary" aria-expanded="false">
-							<?php
-							/* translators: %d: number of scheduled events. */
-							printf( esc_html__( 'Show all %d scheduled events', 'cron-health-check' ), count( $rows ) );
-							?>
-						</button>
-					</p>
-					<div id="chc-all-events" hidden>
-						<?php $this->render_events_table( $rows, false ); ?>
-					</div>
-				<?php endif; ?>
-			</section>
 		</div>
 		<?php
 	}
@@ -308,25 +283,18 @@ final class Cron_Health_Check {
 	 */
 	private function render_result( array $summary, $test ) {
 		if ( 'none' === $summary['status'] ) {
-			echo '<p class="chc-result-empty">' . esc_html__( 'No test has been run yet.', 'cron-health-check' ) . '</p>';
+			echo '<p class="chc-result-empty">' . esc_html__( 'Run the test to check whether WP-Cron fires on this site.', 'cron-health-check' ) . '</p>';
 			return;
-		}
-
-		$when = '';
-		if ( is_array( $test ) && ! empty( $test['started'] ) ) {
-			$when = sprintf(
-				/* translators: %s: human-readable time difference. */
-				__( '%s ago', 'cron-health-check' ),
-				human_time_diff( (int) $test['started'], time() )
-			);
 		}
 		?>
 		<div class="chc-result-card chc-status-<?php echo esc_attr( $summary['status'] ); ?>">
 			<strong class="chc-result-status"><?php echo esc_html( self::status_label( $summary['status'] ) ); ?></strong>
 			<p class="chc-result-message"><?php echo esc_html( $summary['message'] ); ?></p>
 			<dl class="chc-result-meta">
-				<?php if ( '' !== $when ) : ?>
-					<div><dt><?php esc_html_e( 'Ran', 'cron-health-check' ); ?></dt><dd><?php echo esc_html( $when ); ?></dd></div>
+				<?php if ( in_array( $summary['status'], array( 'passed', 'failed' ), true ) ) : ?>
+					<?php $overdue_count = ( is_array( $test ) && isset( $test['overdue'] ) ) ? (int) $test['overdue'] : 0; ?>
+					<div><dt><?php esc_html_e( 'Overdue events (>30 min)', 'cron-health-check' ); ?></dt>
+						<dd class="chc-overdue-count<?php echo $overdue_count > 0 ? ' chc-fail' : ''; ?>"><?php echo esc_html( (string) $overdue_count ); ?></dd></div>
 				<?php endif; ?>
 				<?php if ( null !== $summary['duration'] ) : ?>
 					<div><dt><?php esc_html_e( 'Duration', 'cron-health-check' ); ?></dt><dd>
@@ -387,97 +355,6 @@ final class Cron_Health_Check {
 			default:
 				return __( 'Unknown', 'cron-health-check' );
 		}
-	}
-
-	/**
-	 * Render the overdue headline.
-	 *
-	 * @param array $overdue Overdue rows.
-	 */
-	private function render_overdue_headline( array $overdue ) {
-		if ( empty( $overdue ) ) {
-			echo '<p class="chc-headline chc-status-ok">' . esc_html__( 'No overdue events.', 'cron-health-check' ) . '</p>';
-			return;
-		}
-
-		$oldest = $overdue[0];
-		echo '<p class="chc-headline chc-status-fail">';
-		printf(
-			/* translators: 1: number of overdue events, 2: human-readable duration of the oldest overdue event. */
-			esc_html__( '%1$d events are overdue — the oldest by %2$s. Your site\'s cron may not be running.', 'cron-health-check' ),
-			count( $overdue ),
-			esc_html( human_time_diff( $oldest['timestamp'], time() ) )
-		);
-		echo '</p>';
-	}
-
-	/**
-	 * Render an events table.
-	 *
-	 * @param array $rows    Event rows.
-	 * @param bool  $compact Whether this is the overdue-only table.
-	 */
-	private function render_events_table( array $rows, $compact ) {
-		if ( empty( $rows ) ) {
-			return;
-		}
-		$schedules = wp_get_schedules();
-		$now       = time();
-		?>
-		<table class="widefat striped chc-events-table <?php echo $compact ? 'chc-events-overdue' : ''; ?>">
-			<thead>
-				<tr>
-					<th><?php esc_html_e( 'Hook', 'cron-health-check' ); ?></th>
-					<th><?php esc_html_e( 'Arguments', 'cron-health-check' ); ?></th>
-					<th><?php esc_html_e( 'Scheduled', 'cron-health-check' ); ?></th>
-					<th><?php esc_html_e( 'Recurrence', 'cron-health-check' ); ?></th>
-					<th><?php esc_html_e( 'Flags', 'cron-health-check' ); ?></th>
-				</tr>
-			</thead>
-			<tbody>
-				<?php foreach ( $rows as $row ) : ?>
-					<?php $is_overdue = $row['timestamp'] < $now - self::OVERDUE_GRACE; ?>
-					<tr class="<?php echo $is_overdue ? 'chc-row-overdue' : ''; ?>">
-						<td><code><?php echo esc_html( $row['hook'] ); ?></code></td>
-						<td><code><?php echo esc_html( wp_json_encode( $row['args'] ) ); ?></code></td>
-						<td>
-							<?php echo esc_html( date_i18n( 'Y-m-d H:i:s', $row['timestamp'] ) ); ?>
-							<span class="chc-muted">
-								<?php
-								if ( $row['timestamp'] <= $now ) {
-									/* translators: %s: human-readable time difference. */
-									printf( esc_html__( '%s ago', 'cron-health-check' ), esc_html( human_time_diff( $row['timestamp'], $now ) ) );
-								} else {
-									/* translators: %s: human-readable time difference. */
-									printf( esc_html__( 'in %s', 'cron-health-check' ), esc_html( human_time_diff( $now, $row['timestamp'] ) ) );
-								}
-								?>
-							</span>
-						</td>
-						<td>
-							<?php
-							if ( $row['schedule'] && isset( $schedules[ $row['schedule'] ] ) ) {
-								echo esc_html( $schedules[ $row['schedule'] ]['display'] );
-							} elseif ( $row['schedule'] ) {
-								echo esc_html( $row['schedule'] );
-							} else {
-								esc_html_e( 'Once', 'cron-health-check' );
-							}
-							?>
-						</td>
-						<td>
-							<?php if ( $is_overdue ) : ?>
-								<span class="chc-badge chc-badge-overdue"><?php esc_html_e( 'Overdue', 'cron-health-check' ); ?></span>
-							<?php endif; ?>
-							<?php if ( ! empty( $row['orphaned'] ) ) : ?>
-								<span class="chc-badge chc-badge-orphaned"><?php esc_html_e( 'Orphaned', 'cron-health-check' ); ?></span>
-							<?php endif; ?>
-						</td>
-					</tr>
-				<?php endforeach; ?>
-			</tbody>
-		</table>
-		<?php
 	}
 
 	// ---------------------------------------------------------------------
@@ -615,36 +492,6 @@ final class Cron_Health_Check {
 			'hint'    => $size > 500000 ? __( 'A very large cron option can slow every page load.', 'cron-health-check' ) : '',
 		);
 
-		$test = get_option( self::OPTION, null );
-		$msg  = __( 'No test has run yet.', 'cron-health-check' );
-		$stat = 'info';
-		if ( is_array( $test ) && ! empty( $test['spawn'] ) && is_array( $test['spawn'] ) ) {
-			if ( ! empty( $test['spawn']['alternate'] ) ) {
-				$msg  = __( 'ALTERNATE_WP_CRON is on — no loopback request is made.', 'cron-health-check' );
-				$stat = 'info';
-			} elseif ( ! empty( $test['spawn']['error'] ) ) {
-				$msg = sprintf(
-					/* translators: %s: HTTP error message. */
-					__( 'Loopback request failed: %s', 'cron-health-check' ),
-					$test['spawn']['error']
-				);
-				$stat = 'fail';
-			} elseif ( isset( $test['spawn']['code'] ) && $test['spawn']['code'] ) {
-				$msg = sprintf(
-					/* translators: %d: HTTP status code. */
-					__( 'Loopback request to wp-cron.php returned HTTP %d.', 'cron-health-check' ),
-					(int) $test['spawn']['code']
-				);
-				$stat = ( (int) $test['spawn']['code'] < 400 ) ? 'ok' : 'fail';
-			}
-		}
-		$rows[] = array(
-			'status'  => $stat,
-			'label'   => __( 'Last loopback', 'cron-health-check' ),
-			'message' => $msg,
-			'hint'    => 'fail' === $stat ? __( 'Check SSL, HTTP basic auth, DNS, and firewall rules for the site URL.', 'cron-health-check' ) : '',
-		);
-
 		$wp_timestamp = (int) current_time( 'timestamp' ); // phpcs:ignore WordPress.DateTime.CurrentTimeTimestamp -- comparing server vs WP time is the point.
 		$tz           = wp_timezone_string();
 		$rows[]       = array(
@@ -711,6 +558,7 @@ final class Cron_Health_Check {
 				'lock_age'     => 0,
 				'message'      => __( 'WP-Cron is disabled via DISABLE_WP_CRON. WordPress will never trigger scheduled events itself; a system cron must call wp-cron.php.', 'cron-health-check' ),
 			);
+			$test = $this->with_overdue( $test );
 			update_option( self::OPTION, $test, false );
 			return $test;
 		}
@@ -773,8 +621,22 @@ final class Cron_Health_Check {
 			$test = $fresh;
 		}
 		$test['spawn'] = $this->spawn;
+		$test          = $this->with_overdue( $test );
 		update_option( self::OPTION, $test, false );
 		return $test;
+	}
+
+	/**
+	 * Compute the current overdue counts and fold them into the test record.
+	 *
+	 * @param array $test Test record.
+	 * @return array
+	 */
+	private function with_overdue( array $test ): array {
+		$rows       = self::get_event_rows();
+		$parts      = self::partition_overdue( $rows, time(), self::OVERDUE_GRACE );
+		$oldest_age = empty( $parts['overdue'] ) ? 0 : time() - (int) $parts['overdue'][0]['timestamp'];
+		return self::apply_overdue_verdict( $test, count( $parts['overdue'] ), $oldest_age, self::OVERDUE_GRACE );
 	}
 
 	/**
@@ -833,6 +695,14 @@ final class Cron_Health_Check {
 			$test['reason']  = self::timeout_reason( $spawn );
 			$test['message'] = self::timeout_message( $spawn, self::test_timeout() );
 			update_option( self::OPTION, $test, false );
+		}
+
+		if ( in_array( $test['status'] ?? '', array( 'passed', 'failed' ), true ) ) {
+			$with_verdict = $this->with_overdue( $test );
+			if ( $with_verdict !== $test ) {
+				update_option( self::OPTION, $with_verdict, false );
+			}
+			$test = $with_verdict;
 		}
 
 		wp_send_json_success( $test );
@@ -961,16 +831,6 @@ final class Cron_Health_Check {
 	 * @return array
 	 */
 	public function debug_information( $info ) {
-		$test = get_option( self::OPTION, null );
-		$last = __( 'Never run', 'cron-health-check' );
-		if ( is_array( $test ) ) {
-			$summary = self::summarize_test( $test, time(), self::test_timeout() );
-			$last    = $summary['status'];
-			if ( ! empty( $summary['reason'] ) ) {
-				$last .= ' (' . $summary['reason'] . ')';
-			}
-		}
-
 		$rows  = self::get_event_rows();
 		$parts = self::partition_overdue( $rows, time(), self::OVERDUE_GRACE );
 
@@ -992,10 +852,6 @@ final class Cron_Health_Check {
 				'overdue_events'    => array(
 					'label' => __( 'Overdue events', 'cron-health-check' ),
 					'value' => count( $parts['overdue'] ),
-				),
-				'last_test'         => array(
-					'label' => __( 'Last test', 'cron-health-check' ),
-					'value' => $last,
 				),
 			),
 		);
@@ -1140,7 +996,7 @@ final class Cron_Health_Check {
 				'status'   => 'failed',
 				'reason'   => $reason,
 				'message'  => $message,
-				'duration' => null,
+				'duration' => isset( $test['duration'] ) ? (float) $test['duration'] : null,
 			);
 		}
 
@@ -1160,6 +1016,42 @@ final class Cron_Health_Check {
 			'message'  => __( 'The test is running.', 'cron-health-check' ),
 			'duration' => null,
 		);
+	}
+
+	/**
+	 * Apply the overdue rule: a fired test still fails if events are overdue.
+	 *
+	 * @param array $test       Test record.
+	 * @param int   $overdue    Number of events overdue by more than $grace.
+	 * @param int   $oldest_age Seconds the oldest overdue event is late (0 when none).
+	 * @param int   $grace      Grace seconds before an event counts as overdue.
+	 * @return array
+	 */
+	public static function apply_overdue_verdict( array $test, int $overdue, int $oldest_age, int $grace ): array {
+		$test['overdue']        = $overdue;
+		$test['overdue_oldest'] = $oldest_age;
+
+		if ( 'passed' === ( $test['status'] ?? '' ) && $overdue > 0 ) {
+			$oldest_text     = function_exists( 'human_time_diff' )
+				? human_time_diff( time() - $oldest_age )
+				: sprintf( '%ds', $oldest_age );
+			$test['status']  = 'failed';
+			$test['reason']  = 'overdue';
+			$test['message'] = sprintf(
+				/* translators: 1: overdue event count, 2: grace in minutes, 3: how late the oldest event is. */
+				_n(
+					'Cron fired, but %1$d scheduled event is overdue by more than %2$d minutes (oldest: %3$s late). Cron is running now but has not been keeping up.',
+					'Cron fired, but %1$d scheduled events are overdue by more than %2$d minutes (oldest: %3$s late). Cron is running now but has not been keeping up.',
+					$overdue,
+					'cron-health-check'
+				),
+				$overdue,
+				(int) ( $grace / 60 ),
+				$oldest_text
+			);
+		}
+
+		return $test;
 	}
 
 	/**
@@ -1198,6 +1090,9 @@ final class Cron_Health_Check {
 				__( 'The loopback request to wp-cron.php failed: %s. WordPress cannot reach its own site URL, so scheduled events never run. Check SSL, HTTP basic auth, DNS, and firewall or loopback blocking for the site URL.', 'cron-health-check' ),
 				$spawn['error']
 			);
+		}
+		if ( null !== $spawn && ! empty( $spawn['code'] ) && 500 === (int) $spawn['code'] ) {
+			return __( 'The loopback request to wp-cron.php returned HTTP 500. A scheduled callback is probably fatal-erroring (a 500 means PHP crashed mid-run), so events after it never run. Check the PHP error log.', 'cron-health-check' );
 		}
 		if ( null !== $spawn && ! empty( $spawn['code'] ) && (int) $spawn['code'] >= 400 ) {
 			return sprintf(

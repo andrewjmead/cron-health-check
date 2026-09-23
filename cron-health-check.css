@@ -234,40 +234,8 @@
 	margin-top: 4px;
 }
 
-/* Events table */
-.chc-headline {
-	font-size: 14px;
+/* Result meta */
+.chc-overdue-count.chc-fail {
+	color: #b3261e;
 	font-weight: 700;
-	margin: 0 0 12px;
-}
-
-.chc-headline.chc-status-ok { color: #1e8e3e; }
-.chc-headline.chc-status-fail { color: #b3261e; }
-
-.chc-events-table tr.chc-row-overdue td {
-	background: #fdf2f1;
-}
-
-.chc-muted {
-	color: #8a8a8a;
-	font-size: 12px;
-}
-
-.chc-badge {
-	display: inline-block;
-	font-size: 11px;
-	font-weight: 700;
-	border-radius: 4px;
-	padding: 2px 8px;
-	margin-right: 4px;
-}
-
-.chc-badge-overdue {
-	background: #b3261e;
-	color: #fff;
-}
-
-.chc-badge-orphaned {
-	background: #f0f0f0;
-	color: #6a6a6a;
 }

@@ -110,8 +110,9 @@
 			return;
 		}
 		var meta = '';
-		if ( test.started ) {
-			meta += '<div><dt>' + esc( t( 'ran' ) ) + '</dt><dd>' + esc( t( 'justNow' ) ) + '</dd></div>';
+		if ( test.status === 'passed' || test.status === 'failed' ) {
+			var overdueCount = test.overdue != null ? Number( test.overdue ) : 0;
+			meta += '<div><dt>' + esc( t( 'overdue' ) ) + '</dt><dd class="chc-overdue-count' + ( overdueCount > 0 ? ' chc-fail' : '' ) + '">' + esc( overdueCount ) + '</dd></div>';
 		}
 		if ( test.duration != null ) {
 			meta += '<div><dt>' + esc( t( 'duration' ) ) + '</dt><dd>' + esc( Number( test.duration ).toFixed( 1 ) ) + 's</dd></div>';
@@ -160,29 +161,8 @@
 				if ( newDiag && oldDiag ) {
 					oldDiag.innerHTML = newDiag.innerHTML;
 				}
-				var newEvents = doc.getElementById( 'chc-events-section' );
-				var oldEvents = document.getElementById( 'chc-events-section' );
-				if ( newEvents && oldEvents ) {
-					oldEvents.innerHTML = newEvents.innerHTML;
-					bindToggle();
-				}
 			} )
 			.catch( function () {} );
-	}
-
-	function bindToggle() {
-		var btn = document.getElementById( 'chc-toggle-events' );
-		var box = document.getElementById( 'chc-all-events' );
-		if ( ! btn || ! box ) { return; }
-		btn.addEventListener( 'click', function () {
-			var open = box.hasAttribute( 'hidden' );
-			if ( open ) {
-				box.removeAttribute( 'hidden' );
-			} else {
-				box.setAttribute( 'hidden', '' );
-			}
-			btn.setAttribute( 'aria-expanded', open ? 'true' : 'false' );
-		} );
 	}
 
 	function stopPolling() {
@@ -236,8 +216,6 @@
 		} );
 	}
 
-	bindToggle();
-
 	if ( clearLock ) {
 		clearLock.addEventListener( 'click', function () {
 			clearLock.disabled = true;
@@ -247,10 +225,4 @@
 		} );
 	}
 
-	// Resume polling for a test still running when the page was loaded.
-	if ( data.resume ) {
-		setRunning( true );
-		setStep( 'waiting' );
-		poll( 0 );
-	}
 } )();
