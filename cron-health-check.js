@@ -7,8 +7,11 @@
 	var result = document.getElementById( 'chc-result' );
 	var steps = document.querySelectorAll( '#chc-stepper .chc-step' );
 	var clearLock = document.getElementById( 'chc-clear-lock' );
+	var diagnosticsButton = document.getElementById( 'chc-show-diagnostics' );
+	var diagnosticsCard = document.getElementById( 'chc-diagnostics-card' );
 	var pollTimer = null;
-	var activeStep = null;
+
+	var STEPS = [ 'enabled', 'scheduled', 'spawning', 'waiting', 'overdue' ];
 
 	function t( key ) {
 		return i18n[ key ] || key;
@@ -37,30 +40,44 @@
 			} );
 	}
 
-	function setStep( activeKey ) {
-		var keys = [ 'scheduled', 'spawning', 'waiting' ];
-		var activeIndex = keys.indexOf( activeKey );
-		activeStep = activeKey;
+	function markSteps( doneUpTo, active, failed ) {
+		var doneIdx = doneUpTo ? STEPS.indexOf( doneUpTo ) : -1;
+		var failIdx = failed ? STEPS.indexOf( failed ) : -1;
 		steps.forEach( function ( step ) {
-			var idx = keys.indexOf( step.getAttribute( 'data-step' ) );
-			step.classList.toggle( 'is-done', idx < activeIndex );
-			step.classList.toggle( 'is-active', idx === activeIndex );
+			var idx = STEPS.indexOf( step.getAttribute( 'data-step' ) );
+			step.classList.remove( 'is-done', 'is-active', 'is-failed' );
+			if ( failIdx >= 0 ) {
+				if ( idx < failIdx ) {
+					step.classList.add( 'is-done' );
+				} else if ( idx === failIdx ) {
+					step.classList.add( 'is-failed' );
+				}
+				return;
+			}
+			if ( idx <= doneIdx ) {
+				step.classList.add( 'is-done' );
+			} else if ( step.getAttribute( 'data-step' ) === active ) {
+				step.classList.add( 'is-active' );
+			}
 		} );
 	}
 
-	function finishSteps( status ) {
-		steps.forEach( function ( step ) {
-			step.classList.remove( 'is-active' );
-			if ( status === 'passed' ) {
-				step.classList.add( 'is-done' );
-			} else if ( status === 'failed' && step.getAttribute( 'data-step' ) === activeStep ) {
-				step.classList.add( 'is-failed' );
-			}
-		} );
-		if ( status === 'failed' && ! activeStep ) {
-			var last = steps[ steps.length - 1 ];
-			if ( last ) { last.classList.add( 'is-failed' ); }
-		}
+	function setActive( key ) {
+		var idx = STEPS.indexOf( key );
+		markSteps( idx > 0 ? STEPS[ idx - 1 ] : null, key, null );
+	}
+
+	function stepForFailure( test ) {
+		var r = ( test && test.reason ) || '';
+		if ( r === 'disabled' ) { return 'enabled'; }
+		if ( r === 'overdue' ) { return 'overdue'; }
+		if ( r === 'timeout_loopback_error' || r === 'timeout_http_error' ) { return 'spawning'; }
+		if ( r === 'start' ) { return 'scheduled'; }
+		return 'waiting'; // timeout_no_fire, timeout_no_request, requestFailed
+	}
+
+	function failStepFor( test ) {
+		markSteps( null, null, stepForFailure( test ) );
 	}
 
 	function resetSteps() {
@@ -146,9 +163,21 @@
 	function finish( test ) {
 		stopPolling();
 		render( test );
-		finishSteps( test && test.status ? test.status : 'failed' );
+		if ( test && test.status === 'passed' ) {
+			markSteps( 'overdue', null, null );
+		} else {
+			failStepFor( test );
+		}
 		setRunning( false );
 		refreshSections();
+	}
+
+	// Pause on the overdue-check step briefly so the user sees the verdict land.
+	function finishWithVerdict( test ) {
+		markSteps( 'waiting', 'overdue', null );
+		setTimeout( function () {
+			finish( test );
+		}, 500 );
 	}
 
 	function refreshSections() {
@@ -181,7 +210,7 @@
 		post( 'chc_test_status', function ( res ) {
 			var test = res && res.success ? res.data : null;
 			if ( test && test.status && test.status !== 'running' ) {
-				finish( test );
+				finishWithVerdict( test );
 				return;
 			}
 			pollTimer = setTimeout( function () { poll( elapsed + 1 ); }, 1000 );
@@ -192,26 +221,50 @@
 		runButton.addEventListener( 'click', function () {
 			setRunning( true );
 			resetSteps();
-			setStep( 'scheduled' );
+			setActive( 'enabled' );
+
+			// The start request covers enabled→scheduled→spawning in one round
+			// trip; tick the steps on a timer so the user sees the sequence.
+			var stagedDone = false;
+			setTimeout( function () { setActive( 'scheduled' ); }, 400 );
+			setTimeout( function () {
+				setActive( 'spawning' );
+				stagedDone = true;
+			}, 800 );
+
 			post( 'chc_start_test', function ( res ) {
-				var test = res && res.success ? res.data : null;
-				if ( ! test ) {
-					finish( { status: 'failed', message: ( res && res.data && res.data.message ) || t( 'couldNotStart' ) } );
-					return;
-				}
-				setStep( 'waiting' );
-				if ( test.status === 'failed' ) {
-					finish( test );
-					return;
-				}
-				if ( test.status === 'passed' ) {
-					finish( test );
-					return;
-				}
-				if ( data.altCron && data.homeUrl ) {
-					fetch( data.homeUrl, { mode: 'no-cors', cache: 'no-store' } ).catch( function () {} );
-				}
-				poll( 0 );
+				var proceed = function () {
+					var test = res && res.success ? res.data : null;
+					if ( ! test ) {
+						finish( {
+							status: 'failed',
+							reason: 'start',
+							message: ( res && res.data && res.data.message ) || t( 'couldNotStart' )
+						} );
+						return;
+					}
+					if ( test.status === 'failed' ) {
+						finish( test );
+						return;
+					}
+					if ( test.status === 'passed' ) {
+						finishWithVerdict( test );
+						return;
+					}
+					markSteps( 'spawning', 'waiting', null );
+					if ( data.altCron && data.homeUrl ) {
+						fetch( data.homeUrl, { mode: 'no-cors', cache: 'no-store' } ).catch( function () {} );
+					}
+					poll( 0 );
+				};
+				var waitForStaged = function () {
+					if ( stagedDone ) {
+						proceed();
+					} else {
+						setTimeout( waitForStaged, 100 );
+					}
+				};
+				waitForStaged();
 			} );
 		} );
 	}
@@ -225,4 +278,10 @@
 		} );
 	}
 
+	if ( diagnosticsButton && diagnosticsCard ) {
+		diagnosticsButton.addEventListener( 'click', function () {
+			diagnosticsCard.removeAttribute( 'hidden' );
+			diagnosticsButton.remove();
+		} );
+	}
 } )();

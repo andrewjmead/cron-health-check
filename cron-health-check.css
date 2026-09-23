@@ -5,27 +5,15 @@
 }
 
 .chc-header {
-	padding: 32px 24px;
+	padding: 0;
 	margin: 16px 0 24px;
-	background-color: #fff;
-	background-image: radial-gradient(circle, #d9d9d9 1px, transparent 1px);
-	background-size: 16px 16px;
-	border: 1px solid #e5e5e5;
-	border-radius: 8px;
 }
 
 .chc-header h1 {
 	font-size: 28px;
 	font-weight: 700;
 	color: #1a1a1a;
-	margin: 0 0 8px;
-}
-
-.chc-header p {
-	font-size: 14px;
-	color: #4a4a4a;
 	margin: 0;
-	max-width: 640px;
 }
 
 .chc-card {
@@ -75,10 +63,27 @@
 	background: #e2dcf4;
 }
 
+.chc-link-button {
+	background: none;
+	border: 0;
+	padding: 0;
+	margin: 0 0 24px;
+	color: #8a8a8a;
+	font-size: 12px;
+	cursor: pointer;
+	text-decoration: underline;
+}
+
+.chc-link-button:hover,
+.chc-link-button:focus {
+	color: #5b3fa0;
+}
+
 /* Stepper */
 .chc-stepper {
 	display: flex;
-	gap: 24px;
+	flex-direction: column;
+	gap: 10px;
 	list-style: none;
 	margin: 20px 0;
 	padding: 0;
@@ -93,16 +98,18 @@
 }
 
 .chc-dot {
-	width: 12px;
-	height: 12px;
+	width: 16px;
+	height: 16px;
 	border-radius: 50%;
 	background: #d9d9d9;
 	display: inline-block;
+	position: relative;
+	flex-shrink: 0;
+	transition: background-color .2s;
 }
 
 .chc-step.is-active {
 	color: #1a1a1a;
-	font-weight: 700;
 }
 
 .chc-step.is-active .chc-dot {
@@ -111,20 +118,50 @@
 }
 
 .chc-step.is-done {
-	color: #1e8e3e;
+	color: #1a1a1a;
 }
 
 .chc-step.is-done .chc-dot {
 	background: #1e8e3e;
 }
 
+.chc-step.is-done .chc-dot::after {
+	content: '';
+	position: absolute;
+	left: 5px;
+	top: 2px;
+	width: 4px;
+	height: 8px;
+	border: solid #fff;
+	border-width: 0 2px 2px 0;
+	transform: rotate(45deg);
+}
+
 .chc-step.is-failed {
 	color: #b3261e;
-	font-weight: 700;
 }
 
 .chc-step.is-failed .chc-dot {
 	background: #b3261e;
+}
+
+.chc-step.is-failed .chc-dot::before,
+.chc-step.is-failed .chc-dot::after {
+	content: '';
+	position: absolute;
+	left: 7px;
+	top: 3px;
+	width: 2px;
+	height: 10px;
+	background: #fff;
+}
+
+.chc-step.is-failed .chc-dot::before {
+	transform: rotate(45deg);
+}
+
+.chc-step.is-failed .chc-dot::after {
+	transform: rotate(-45deg);
 }
 
 @keyframes chc-pulse {
@@ -136,6 +173,9 @@
 	.chc-step.is-active .chc-dot {
 		animation: none;
 	}
+	.chc-dot {
+		transition: none;
+	}
 }
 
 /* Result card */
@@ -146,16 +186,10 @@
 
 .chc-result-card {
 	border: 1px solid #e5e5e5;
-	border-left-width: 4px;
 	border-radius: 6px;
 	padding: 16px 20px;
 	background: #fff;
 }
-
-.chc-result-card.chc-status-passed { border-left-color: #1e8e3e; }
-.chc-result-card.chc-status-failed { border-left-color: #b3261e; }
-.chc-result-card.chc-status-running { border-left-color: #b26a00; }
-.chc-result-card.chc-status-none { border-left-color: #5b3fa0; }
 
 .chc-result-status {
 	font-size: 15px;
@@ -200,20 +234,13 @@
 }
 
 .chc-diagnostic {
-	padding: 12px 0 12px 20px;
+	padding: 12px 0;
 	border-bottom: 1px solid #f0f0f0;
-	border-left: 3px solid #d9d9d9;
-	position: relative;
 }
 
 .chc-diagnostic:last-child {
 	border-bottom: 0;
 }
-
-.chc-diagnostic.chc-status-ok { border-left-color: #1e8e3e; }
-.chc-diagnostic.chc-status-warn { border-left-color: #b26a00; }
-.chc-diagnostic.chc-status-fail { border-left-color: #b3261e; }
-.chc-diagnostic.chc-status-info { border-left-color: #5b3fa0; }
 
 .chc-diagnostic-label {
 	display: block;
@@ -230,7 +257,7 @@
 .chc-diagnostic-hint {
 	display: block;
 	font-size: 12px;
-	color: #5b3fa0;
+	color: #6a6a6a;
 	margin-top: 4px;
 }
 

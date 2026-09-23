@@ -229,18 +229,19 @@ final class Cron_Health_Check {
 		<div class="wrap chc-wrap">
 			<header class="chc-header">
 				<h1><?php esc_html_e( 'Cron Health Check', 'cron-health-check' ); ?></h1>
-				<p><?php esc_html_e( 'Run a one-time test to prove WP-Cron fires on this site and that no scheduled events are overdue.', 'cron-health-check' ); ?></p>
 			</header>
 
 			<section class="chc-card chc-test-panel">
 				<button type="button" id="chc-run-test" class="chc-button">
-					<?php esc_html_e( 'Run test', 'cron-health-check' ); ?>
+					<?php esc_html_e( 'Run Test', 'cron-health-check' ); ?>
 				</button>
 
 				<ol class="chc-stepper" id="chc-stepper">
-					<li class="chc-step" data-step="scheduled"><span class="chc-dot"></span><?php esc_html_e( 'Scheduled', 'cron-health-check' ); ?></li>
-					<li class="chc-step" data-step="spawning"><span class="chc-dot"></span><?php esc_html_e( 'Spawning cron', 'cron-health-check' ); ?></li>
-					<li class="chc-step" data-step="waiting"><span class="chc-dot"></span><?php esc_html_e( 'Waiting for event', 'cron-health-check' ); ?></li>
+					<li class="chc-step" data-step="enabled"><span class="chc-dot"></span><span class="chc-step-label"><?php esc_html_e( 'Checking that WP-Cron is enabled', 'cron-health-check' ); ?></span></li>
+					<li class="chc-step" data-step="scheduled"><span class="chc-dot"></span><span class="chc-step-label"><?php esc_html_e( 'Scheduling test event', 'cron-health-check' ); ?></span></li>
+					<li class="chc-step" data-step="spawning"><span class="chc-dot"></span><span class="chc-step-label"><?php esc_html_e( 'Spawning cron', 'cron-health-check' ); ?></span></li>
+					<li class="chc-step" data-step="waiting"><span class="chc-dot"></span><span class="chc-step-label"><?php esc_html_e( 'Waiting for event to fire', 'cron-health-check' ); ?></span></li>
+					<li class="chc-step" data-step="overdue"><span class="chc-dot"></span><span class="chc-step-label"><?php esc_html_e( 'Checking for overdue events', 'cron-health-check' ); ?></span></li>
 				</ol>
 
 				<div id="chc-result" class="chc-result" aria-live="polite">
@@ -256,7 +257,8 @@ final class Cron_Health_Check {
 				<?php endif; ?>
 			</section>
 
-			<section class="chc-card">
+			<button type="button" id="chc-show-diagnostics" class="chc-link-button"><?php esc_html_e( 'Show Advanced Diagnostics', 'cron-health-check' ); ?></button>
+			<section class="chc-card chc-diagnostics-card" id="chc-diagnostics-card" hidden>
 				<h2><?php esc_html_e( 'Diagnostics', 'cron-health-check' ); ?></h2>
 				<ul class="chc-diagnostics">
 					<?php foreach ( $diagnostics as $row ) : ?>
