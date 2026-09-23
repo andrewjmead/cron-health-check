@@ -3,7 +3,6 @@
 	<description>Coding standards for the Cron Health Check plugin.</description>
 
 	<file>./cron-health-check.php</file>
-	<file>./tests</file>
 
 	<exclude-pattern>*/vendor/*</exclude-pattern>
 	<exclude-pattern>*/node_modules/*</exclude-pattern>
@@ -20,6 +19,8 @@
 		<exclude name="Generic.Commenting.DocComment.SpacingAfter"/>
 		<exclude name="WordPress.WP.AlternativeFunctions"/>
 		<exclude name="WordPress.DateTime.RestrictedFunctions"/>
+		<exclude name="WordPress.NamingConventions.PrefixAllGlobals.ShortPrefixPassed"/>
+		<exclude name="Generic.Commenting.DocComment.MissingShort"/>
 	</rule>
 
 	<rule ref="WordPress.WP.I18n">
