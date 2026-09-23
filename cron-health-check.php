@@ -272,7 +272,10 @@ final class Cron_Health_Check {
 		<div class="wrap chc-wrap">
 			<section class="chc-card chc-test-panel">
 				<header class="chc-header">
-					<h1><?php esc_html_e( 'Cron Health Check', 'cron-health-check' ); ?></h1>
+					<div class="chc-header-row">
+						<h1><?php esc_html_e( 'Cron Health Check', 'cron-health-check' ); ?></h1>
+						<a class="chc-plugin-link" href="https://wordpress.org/plugins/cron-health-check/" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Visit plugin page', 'cron-health-check' ); ?></a>
+					</div>
 					<p class="chc-subtitle"><?php esc_html_e( 'Run the test to check whether WP-Cron fires on this site.', 'cron-health-check' ); ?></p>
 				</header>
 
