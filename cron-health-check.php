@@ -269,7 +269,7 @@ final class Cron_Health_Check {
 			<section class="chc-card chc-test-panel">
 				<header class="chc-header">
 					<h1><?php esc_html_e( 'Cron Health Check', 'cron-health-check' ); ?></h1>
-					<p class="chc-subtitle"><?php esc_html_e( 'A simple test to verify that WP-Cron is working on this WordPress site', 'cron-health-check' ); ?></p>
+					<p class="chc-subtitle"><?php esc_html_e( 'Check that WP-Cron is working correctly on your WordPress website', 'cron-health-check' ); ?></p>
 				</header>
 
 				<button type="button" id="chc-run-test" class="chc-button">
