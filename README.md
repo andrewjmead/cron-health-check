@@ -1,6 +1,6 @@
-# Cron Health Check
+# Spawn – Cron Health Check
 
-A WordPress plugin that manually tests whether WP-Cron actually fires on your site, and lists overdue scheduled events. The shipped plugin lives in `src/` and is three files: `src/cron-health-check.php`, `src/cron-health-check.js`, `src/cron-health-check.css`.
+A WordPress plugin that manually tests whether WP-Cron actually fires on your site, and lists overdue scheduled events. The shipped plugin lives in `src/` and is three files: `src/spawn-cron-health-check.php`, `src/spawn-cron-health-check.js`, `src/spawn-cron-health-check.css`.
 
 ## Development setup
 
@@ -29,5 +29,5 @@ npm run test:integration   # runs the integration suite inside wp-env
 ## Build a distributable zip
 
 ```bash
-bin/build-zip.sh   # writes dist/cron-health-check.zip
+bin/build-zip.sh   # writes dist/spawn-cron-health-check.zip
 ```

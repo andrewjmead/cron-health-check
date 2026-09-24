@@ -1,4 +1,4 @@
-=== Cron Health Check ===
+=== Spawn – Cron Health Check ===
 Contributors: andrewmead
 Tags: cron, wp-cron, scheduled events, debugging, site health
 Requires at least: 6.0

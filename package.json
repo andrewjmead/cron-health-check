@@ -1,5 +1,5 @@
 {
-	"name": "cron-health-check",
+	"name": "spawn-cron-health-check",
 	"private": true,
 	"description": "Dev environment tooling for the Cron Health Check plugin.",
 	"devDependencies": {
