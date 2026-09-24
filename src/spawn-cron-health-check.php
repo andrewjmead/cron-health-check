@@ -175,7 +175,7 @@ final class CRHC_Cron_Health_Check {
 	 */
 	public function admin_menu() {
 		add_management_page(
-			__( 'Spawn – Cron Health Check', 'spawn-cron-health-check' ),
+			__( 'Cron Health Check', 'spawn-cron-health-check' ),
 			__( 'Cron Health Check', 'spawn-cron-health-check' ),
 			'manage_options',
 			'spawn-cron-health-check',
@@ -301,7 +301,7 @@ final class CRHC_Cron_Health_Check {
 		<div class="wrap crhc-wrap">
 			<section class="crhc-card crhc-test-panel">
 				<header class="crhc-header">
-					<h1><?php esc_html_e( 'Spawn – Cron Health Check', 'spawn-cron-health-check' ); ?></h1>
+					<h1><?php esc_html_e( 'Cron Health Check', 'spawn-cron-health-check' ); ?></h1>
 					<p class="crhc-subtitle"><?php esc_html_e( 'Check that WP-Cron is working correctly on your WordPress website', 'spawn-cron-health-check' ); ?></p>
 				</header>
 
@@ -791,7 +791,7 @@ final class CRHC_Cron_Health_Check {
 		$parts = self::partition_overdue( $rows, time(), self::OVERDUE_GRACE );
 
 		$info['spawn-cron-health-check'] = array(
-			'label'  => __( 'Spawn – Cron Health Check', 'spawn-cron-health-check' ),
+			'label'  => __( 'Cron Health Check', 'spawn-cron-health-check' ),
 			'fields' => array(
 				'disable_wp_cron'   => array(
 					'label' => 'DISABLE_WP_CRON',
