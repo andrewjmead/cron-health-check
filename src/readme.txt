@@ -4,7 +4,7 @@ Tags: cron, wp-cron, scheduled events, debugging, site health
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.2
+Stable tag: 1.0.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -23,6 +23,9 @@ The test checks three main things:
 This is a free plugin. There's no pro version and no locked features.
 
 == Changelog ==
+
+= 1.0.3 =
+* Report-style results panel with per-step explanations and overdue event details.
 
 = 1.0.2 =
 * Rename plugin to Spawn – Cron Health Check.
