@@ -465,6 +465,7 @@
 .spcr-why ul {
 	margin: 0;
 	padding-left: 18px;
+	list-style: disc;
 }
 
 .spcr-why li {
