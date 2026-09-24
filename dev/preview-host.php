@@ -8,30 +8,30 @@ if ( empty( $_SERVER['HTTP_X_FORWARDED_HOST'] ) || ( defined( 'WP_CLI' ) && WP_C
 	return;
 }
 
-define( 'CRHC_PREVIEW_HOST', $_SERVER['HTTP_X_FORWARDED_HOST'] );
+define( 'SPCR_PREVIEW_HOST', $_SERVER['HTTP_X_FORWARDED_HOST'] );
 
 $_SERVER['HTTPS']     = 'on';
-$_SERVER['HTTP_HOST'] = CRHC_PREVIEW_HOST;
+$_SERVER['HTTP_HOST'] = SPCR_PREVIEW_HOST;
 
-$crhc_dev_url = function () {
-	return 'https://' . CRHC_PREVIEW_HOST;
+$spcr_dev_url = function () {
+	return 'https://' . SPCR_PREVIEW_HOST;
 };
 
-add_filter( 'option_home', $crhc_dev_url );
-add_filter( 'option_siteurl', $crhc_dev_url );
-add_filter( 'pre_option_home', $crhc_dev_url );
-add_filter( 'pre_option_siteurl', $crhc_dev_url, 20 );
+add_filter( 'option_home', $spcr_dev_url );
+add_filter( 'option_siteurl', $spcr_dev_url );
+add_filter( 'pre_option_home', $spcr_dev_url );
+add_filter( 'pre_option_siteurl', $spcr_dev_url, 20 );
 
 // WP_CONTENT_URL is computed from the DB siteurl before mu-plugins load, so rewrite asset URLs too.
-$crhc_dev_rehost = function ( $url ) {
-	return preg_replace( '#^https?://localhost(:\d+)?#', 'https://' . CRHC_PREVIEW_HOST, $url );
+$spcr_dev_rehost = function ( $url ) {
+	return preg_replace( '#^https?://localhost(:\d+)?#', 'https://' . SPCR_PREVIEW_HOST, $url );
 };
-add_filter( 'plugins_url', $crhc_dev_rehost );
-add_filter( 'content_url', $crhc_dev_rehost );
-add_filter( 'includes_url', $crhc_dev_rehost );
-add_filter( 'upload_dir', function ( $dirs ) use ( $crhc_dev_rehost ) {
-	$dirs['url']     = $crhc_dev_rehost( $dirs['url'] );
-	$dirs['baseurl'] = $crhc_dev_rehost( $dirs['baseurl'] );
+add_filter( 'plugins_url', $spcr_dev_rehost );
+add_filter( 'content_url', $spcr_dev_rehost );
+add_filter( 'includes_url', $spcr_dev_rehost );
+add_filter( 'upload_dir', function ( $dirs ) use ( $spcr_dev_rehost ) {
+	$dirs['url']     = $spcr_dev_rehost( $dirs['url'] );
+	$dirs['baseurl'] = $spcr_dev_rehost( $dirs['baseurl'] );
 	return $dirs;
 } );
 

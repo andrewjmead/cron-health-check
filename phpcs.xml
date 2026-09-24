@@ -34,9 +34,9 @@
 	<rule ref="WordPress.NamingConventions.PrefixAllGlobals">
 		<properties>
 			<property name="prefixes" type="array">
-				<element value="crhc"/>
-				<element value="CRHC_Cron_Health_Check"/>
-				<element value="CRHC"/>
+				<element value="spcr"/>
+				<element value="SPCR_Cron_Health_Check"/>
+				<element value="SPCR"/>
 			</property>
 		</properties>
 	</rule>

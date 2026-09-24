@@ -2,7 +2,7 @@
 /**
  * Unit test bootstrap: Brain Monkey, no WordPress required.
  *
- * @package CRHC_Cron_Health_Check
+ * @package SPCR_Cron_Health_Check
  */
 
 require_once dirname( __DIR__, 2 ) . '/vendor/autoload.php';
@@ -22,7 +22,7 @@ require_once dirname( __DIR__, 2 ) . '/src/spawn-cron-health-check.php';
 /**
  * Base test case wiring Brain Monkey into the PHPUnit lifecycle.
  */
-abstract class CRHC_Unit_TestCase extends Yoast\PHPUnitPolyfills\TestCases\TestCase {
+abstract class SPCR_Unit_TestCase extends Yoast\PHPUnitPolyfills\TestCases\TestCase {
 
 	/**
 	 * Set up Brain Monkey.

@@ -1,12 +1,12 @@
 ( function () {
 	'use strict';
 
-	var data = window.crhcData || {};
+	var data = window.spcrData || {};
 	var i18n = data.i18n || {};
-	var runButton = document.getElementById( 'crhc-run-test' );
-	var result = document.getElementById( 'crhc-result' );
-	var steps = document.querySelectorAll( '#crhc-stepper .crhc-step' );
-	var clearLock = document.getElementById( 'crhc-clear-lock' );
+	var runButton = document.getElementById( 'spcr-run-test' );
+	var result = document.getElementById( 'spcr-result' );
+	var steps = document.querySelectorAll( '#spcr-stepper .spcr-step' );
+	var clearLock = document.getElementById( 'spcr-clear-lock' );
 	var pollTimer = null;
 
 	function t( key ) {
@@ -52,14 +52,14 @@
 		if ( 'active' === state ) { el.classList.add( 'is-active' ); }
 		if ( 'done' === state ) { el.classList.add( 'is-done' ); }
 		if ( 'failed' === state ) { el.classList.add( 'is-failed' ); }
-		var status = el.querySelector( '.crhc-step-status' );
+		var status = el.querySelector( '.spcr-step-status' );
 		if ( status ) { status.textContent = text || ''; }
 	}
 
 	function resetSteps() {
 		steps.forEach( function ( step ) {
 			step.classList.remove( 'is-done', 'is-active', 'is-failed' );
-			var status = step.querySelector( '.crhc-step-status' );
+			var status = step.querySelector( '.spcr-step-status' );
 			if ( status ) { status.textContent = ''; }
 		} );
 	}
@@ -86,10 +86,10 @@
 
 	// The failed step's label + status line, or the test message as a fallback.
 	function failureDetail( test ) {
-		var failed = document.querySelector( '#crhc-stepper .crhc-step.is-failed' );
+		var failed = document.querySelector( '#spcr-stepper .spcr-step.is-failed' );
 		if ( failed ) {
-			var label = failed.querySelector( '.crhc-step-label' );
-			var status = failed.querySelector( '.crhc-step-status' );
+			var label = failed.querySelector( '.spcr-step-label' );
+			var status = failed.querySelector( '.spcr-step-status' );
 			var text = ( label ? label.textContent : '' ) + ( status && status.textContent ? ': ' + status.textContent : '' );
 			if ( text ) { return text; }
 		}
@@ -100,8 +100,8 @@
 	function stepReport() {
 		var rows = [];
 		steps.forEach( function ( step, i ) {
-			var label = step.querySelector( '.crhc-step-label' );
-			var status = step.querySelector( '.crhc-step-status' );
+			var label = step.querySelector( '.spcr-step-label' );
+			var status = step.querySelector( '.spcr-step-status' );
 			var state = 'skipped';
 			if ( step.classList.contains( 'is-done' ) ) { state = 'passed'; }
 			if ( step.classList.contains( 'is-failed' ) ) { state = 'failed'; }
@@ -135,12 +135,12 @@
 	}
 
 	function reportHtml() {
-		var html = '<ol class="crhc-report">';
+		var html = '<ol class="spcr-report">';
 		stepReport().forEach( function ( row ) {
-			html += '<li class="crhc-report-row is-' + row.state + '">' +
-				'<span class="crhc-report-state">' + esc( stateLabel( row.state ) ) + '</span>' +
-				'<span class="crhc-report-body"><span class="crhc-report-label">' + esc( row.label ) + '</span>' +
-				( row.text ? '<span class="crhc-report-text">' + esc( row.text ) + '</span>' : '' ) +
+			html += '<li class="spcr-report-row is-' + row.state + '">' +
+				'<span class="spcr-report-state">' + esc( stateLabel( row.state ) ) + '</span>' +
+				'<span class="spcr-report-body"><span class="spcr-report-label">' + esc( row.label ) + '</span>' +
+				( row.text ? '<span class="spcr-report-text">' + esc( row.text ) + '</span>' : '' ) +
 				'</span></li>';
 		} );
 		return html + '</ol>';
@@ -172,30 +172,30 @@
 		}
 		var passed = test.status === 'passed';
 		var icon = passed
-			? '<path class="crhc-result-mark" d="m4 12 5 5L20 6"/>'
-			: '<path class="crhc-result-mark" d="M18 6 6 18"/><path class="crhc-result-mark" d="m6 6 12 12"/>';
-		var badge = '<span class="crhc-result-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' + icon + '</svg></span>';
-		var title = '<strong class="crhc-result-status">' + esc( t( passed ? 'passedTitle' : 'failedTitle' ) ) + '</strong>';
+			? '<path class="spcr-result-mark" d="m4 12 5 5L20 6"/>'
+			: '<path class="spcr-result-mark" d="M18 6 6 18"/><path class="spcr-result-mark" d="m6 6 12 12"/>';
+		var badge = '<span class="spcr-result-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' + icon + '</svg></span>';
+		var title = '<strong class="spcr-result-status">' + esc( t( passed ? 'passedTitle' : 'failedTitle' ) ) + '</strong>';
 
 		if ( passed ) {
-			result.innerHTML = '<div class="crhc-result-card crhc-status-passed">' + badge + title + '</div>';
+			result.innerHTML = '<div class="spcr-result-card spcr-status-passed">' + badge + title + '</div>';
 			return;
 		}
 
 		result.innerHTML =
-			'<div class="crhc-result-card crhc-status-failed">' +
-				'<div class="crhc-result-head">' + badge + title + '</div>' +
-				'<p class="crhc-result-message">' + esc( failureDetail( test ) ) + '</p>' +
-				'<div class="crhc-result-actions">' +
-					'<button type="button" class="button crhc-report-toggle" aria-expanded="false">' + esc( t( 'viewReport' ) ) + '</button>' +
-					'<button type="button" class="button crhc-report-copy">' + esc( t( 'copyReport' ) ) + '</button>' +
+			'<div class="spcr-result-card spcr-status-failed">' +
+				'<div class="spcr-result-head">' + badge + title + '</div>' +
+				'<p class="spcr-result-message">' + esc( failureDetail( test ) ) + '</p>' +
+				'<div class="spcr-result-actions">' +
+					'<button type="button" class="button spcr-report-toggle" aria-expanded="false">' + esc( t( 'viewReport' ) ) + '</button>' +
+					'<button type="button" class="button spcr-report-copy">' + esc( t( 'copyReport' ) ) + '</button>' +
 				'</div>' +
-				'<div class="crhc-report-wrap" hidden>' + reportHtml() + '</div>' +
+				'<div class="spcr-report-wrap" hidden>' + reportHtml() + '</div>' +
 			'</div>';
 
-		var toggle = result.querySelector( '.crhc-report-toggle' );
-		var copy = result.querySelector( '.crhc-report-copy' );
-		var wrap = result.querySelector( '.crhc-report-wrap' );
+		var toggle = result.querySelector( '.spcr-report-toggle' );
+		var copy = result.querySelector( '.spcr-report-copy' );
+		var wrap = result.querySelector( '.spcr-report-wrap' );
 		toggle.addEventListener( 'click', function () {
 			var open = wrap.hasAttribute( 'hidden' );
 			if ( open ) { wrap.removeAttribute( 'hidden' ); } else { wrap.setAttribute( 'hidden', '' ); }
@@ -236,7 +236,7 @@
 			finish( { status: 'failed', reason: 'timeout', message: t( 'timeout' ) } );
 			return;
 		}
-		post( 'crhc_test_status', function ( res ) {
+		post( 'spcr_test_status', function ( res ) {
 			var test = res && res.success ? res.data : null;
 			if ( test && test.status && test.status !== 'running' ) {
 				finish( test );
@@ -327,7 +327,7 @@
 			render( null );
 			setStep( 'enabled', 'active', '' );
 
-			post( 'crhc_start_test', function ( res ) {
+			post( 'spcr_start_test', function ( res ) {
 				var test = res && res.success ? res.data : null;
 				var errorMessage = ( res && res.data && res.data.message ) || t( 'couldNotStart' );
 				var list = stepResults( test, errorMessage );
@@ -350,7 +350,7 @@
 	if ( clearLock ) {
 		clearLock.addEventListener( 'click', function () {
 			clearLock.disabled = true;
-			post( 'crhc_clear_lock', function () {
+			post( 'spcr_clear_lock', function () {
 				window.location.reload();
 			} );
 		} );

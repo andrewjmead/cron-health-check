@@ -2,19 +2,19 @@
 /**
  * Tests for lock_state().
  *
- * @package CRHC_Cron_Health_Check
+ * @package SPCR_Cron_Health_Check
  */
 
 /**
  * Lock state tests.
  */
-final class LockStateTest extends CRHC_Unit_TestCase {
+final class LockStateTest extends SPCR_Unit_TestCase {
 
 	/**
 	 * No lock yields state "none".
 	 */
 	public function test_no_lock() {
-		$state = CRHC_Cron_Health_Check::lock_state( null, 1000.0, 60 );
+		$state = SPCR_Cron_Health_Check::lock_state( null, 1000.0, 60 );
 
 		$this->assertSame( 'none', $state['state'] );
 		$this->assertSame( 0.0, $state['age'] );
@@ -24,7 +24,7 @@ final class LockStateTest extends CRHC_Unit_TestCase {
 	 * A lock younger than the timeout is fresh.
 	 */
 	public function test_fresh_lock() {
-		$state = CRHC_Cron_Health_Check::lock_state( 990.0, 1000.0, 60 );
+		$state = SPCR_Cron_Health_Check::lock_state( 990.0, 1000.0, 60 );
 
 		$this->assertSame( 'fresh', $state['state'] );
 		$this->assertSame( 10.0, $state['age'] );
@@ -34,7 +34,7 @@ final class LockStateTest extends CRHC_Unit_TestCase {
 	 * A lock older than the timeout is stale.
 	 */
 	public function test_stale_lock() {
-		$state = CRHC_Cron_Health_Check::lock_state( 900.0, 1000.0, 60 );
+		$state = SPCR_Cron_Health_Check::lock_state( 900.0, 1000.0, 60 );
 
 		$this->assertSame( 'stale', $state['state'] );
 		$this->assertSame( 100.0, $state['age'] );
@@ -44,7 +44,7 @@ final class LockStateTest extends CRHC_Unit_TestCase {
 	 * A lock exactly at the timeout boundary is fresh (not yet stale).
 	 */
 	public function test_boundary_is_fresh() {
-		$state = CRHC_Cron_Health_Check::lock_state( 940.0, 1000.0, 60 );
+		$state = SPCR_Cron_Health_Check::lock_state( 940.0, 1000.0, 60 );
 
 		$this->assertSame( 'fresh', $state['state'] );
 	}

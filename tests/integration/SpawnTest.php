@@ -2,7 +2,7 @@
 /**
  * Integration tests for the cron spawn flow, run inside wp-env.
  *
- * @package CRHC_Cron_Health_Check
+ * @package SPCR_Cron_Health_Check
  */
 
 /**
@@ -14,9 +14,9 @@ final class SpawnTest extends WP_UnitTestCase {
 	 * Clean up between tests.
 	 */
 	public function tear_down() {
-		wp_clear_scheduled_hook( CRHC_Cron_Health_Check::TEST_HOOK );
-		wp_clear_scheduled_hook( 'crhc_bogus_overdue' );
-		delete_option( CRHC_Cron_Health_Check::OPTION );
+		wp_clear_scheduled_hook( SPCR_Cron_Health_Check::TEST_HOOK );
+		wp_clear_scheduled_hook( 'spcr_bogus_overdue' );
+		delete_option( SPCR_Cron_Health_Check::OPTION );
 		parent::tear_down();
 	}
 
@@ -24,12 +24,12 @@ final class SpawnTest extends WP_UnitTestCase {
 	 * Scheduling the event then running it marks the stored test as fired.
 	 */
 	public function test_event_fires_and_marks_test() {
-		delete_option( CRHC_Cron_Health_Check::OPTION );
-		wp_clear_scheduled_hook( CRHC_Cron_Health_Check::TEST_HOOK );
+		delete_option( SPCR_Cron_Health_Check::OPTION );
+		wp_clear_scheduled_hook( SPCR_Cron_Health_Check::TEST_HOOK );
 
 		$id = wp_generate_password( 12, false, false );
 		update_option(
-			CRHC_Cron_Health_Check::OPTION,
+			SPCR_Cron_Health_Check::OPTION,
 			array(
 				'id'      => $id,
 				'started' => time(),
@@ -40,13 +40,13 @@ final class SpawnTest extends WP_UnitTestCase {
 			false
 		);
 
-		wp_schedule_single_event( time() - 1, CRHC_Cron_Health_Check::TEST_HOOK, array( $id ) );
-		$this->assertNotFalse( wp_next_scheduled( CRHC_Cron_Health_Check::TEST_HOOK, array( $id ) ) );
+		wp_schedule_single_event( time() - 1, SPCR_Cron_Health_Check::TEST_HOOK, array( $id ) );
+		$this->assertNotFalse( wp_next_scheduled( SPCR_Cron_Health_Check::TEST_HOOK, array( $id ) ) );
 
 		// Trigger the callback directly (equivalent to the event firing).
-		do_action( CRHC_Cron_Health_Check::TEST_HOOK, $id );
+		do_action( SPCR_Cron_Health_Check::TEST_HOOK, $id );
 
-		$test = get_option( CRHC_Cron_Health_Check::OPTION );
+		$test = get_option( SPCR_Cron_Health_Check::OPTION );
 		$this->assertIsArray( $test );
 		$this->assertSame( 'passed', $test['status'] );
 		$this->assertNotNull( $test['fired'] );
@@ -58,7 +58,7 @@ final class SpawnTest extends WP_UnitTestCase {
 	 */
 	public function test_mismatched_id_ignored() {
 		update_option(
-			CRHC_Cron_Health_Check::OPTION,
+			SPCR_Cron_Health_Check::OPTION,
 			array(
 				'id'      => 'current',
 				'started' => time(),
@@ -68,9 +68,9 @@ final class SpawnTest extends WP_UnitTestCase {
 			false
 		);
 
-		do_action( CRHC_Cron_Health_Check::TEST_HOOK, 'stale-id' );
+		do_action( SPCR_Cron_Health_Check::TEST_HOOK, 'stale-id' );
 
-		$test = get_option( CRHC_Cron_Health_Check::OPTION );
+		$test = get_option( SPCR_Cron_Health_Check::OPTION );
 		$this->assertSame( 'running', $test['status'] );
 		$this->assertNull( $test['fired'] );
 	}
@@ -81,24 +81,24 @@ final class SpawnTest extends WP_UnitTestCase {
 	public function test_run_test_schedules_event() {
 		// The WP test bootstrap defines DISABLE_WP_CRON; the filter is the
 		// supported way to override it in tests.
-		add_filter( 'crhc_cron_disabled', '__return_false' );
-		delete_option( CRHC_Cron_Health_Check::OPTION );
+		add_filter( 'spcr_cron_disabled', '__return_false' );
+		delete_option( SPCR_Cron_Health_Check::OPTION );
 		set_transient( 'doing_cron', microtime( true ) ); // Fresh lock must be cleared too.
 
 		// No pre-existing events, so the overdue check passes and we reach scheduling.
 		$cron = _get_cron_array();
 		_set_cron_array( array() );
 
-		$test = CRHC_Cron_Health_Check::instance()->run_test();
+		$test = SPCR_Cron_Health_Check::instance()->run_test();
 
-		remove_filter( 'crhc_cron_disabled', '__return_false' );
+		remove_filter( 'spcr_cron_disabled', '__return_false' );
 
 		$this->assertIsArray( $test );
 		$this->assertArrayHasKey( 'spawn', $test );
 		$this->assertNotEmpty( $test['id'] );
 		$this->assertTrue( $test['lock_cleared'] );
 		$this->assertArrayHasKey( 'lock_age', $test );
-		$this->assertNotFalse( wp_next_scheduled( CRHC_Cron_Health_Check::TEST_HOOK, array( $test['id'] ) ) );
+		$this->assertNotFalse( wp_next_scheduled( SPCR_Cron_Health_Check::TEST_HOOK, array( $test['id'] ) ) );
 		// If the spawned process fired the event before spawn_cron() returned,
 		// the merge must have preserved it.
 		if ( 'passed' === $test['status'] ) {
@@ -113,7 +113,7 @@ final class SpawnTest extends WP_UnitTestCase {
 		}
 
 		// Restore the pre-existing cron array (the test event is cleared by tear_down).
-		wp_clear_scheduled_hook( CRHC_Cron_Health_Check::TEST_HOOK );
+		wp_clear_scheduled_hook( SPCR_Cron_Health_Check::TEST_HOOK );
 		_set_cron_array( $cron );
 	}
 
@@ -122,24 +122,24 @@ final class SpawnTest extends WP_UnitTestCase {
 	 * test event is ever scheduled.
 	 */
 	public function test_overdue_events_fail_before_scheduling() {
-		add_filter( 'crhc_cron_disabled', '__return_false' );
+		add_filter( 'spcr_cron_disabled', '__return_false' );
 
 		// Schedule a bogus event far past the 30-minute grace before the run
 		// snapshots the overdue count.
-		wp_schedule_single_event( time() - 2 * HOUR_IN_SECONDS, 'crhc_bogus_overdue' );
+		wp_schedule_single_event( time() - 2 * HOUR_IN_SECONDS, 'spcr_bogus_overdue' );
 
-		$test = CRHC_Cron_Health_Check::instance()->run_test();
+		$test = SPCR_Cron_Health_Check::instance()->run_test();
 
-		remove_filter( 'crhc_cron_disabled', '__return_false' );
-		wp_clear_scheduled_hook( 'crhc_bogus_overdue' );
+		remove_filter( 'spcr_cron_disabled', '__return_false' );
+		wp_clear_scheduled_hook( 'spcr_bogus_overdue' );
 
 		$this->assertSame( 'failed', $test['status'] );
 		$this->assertSame( 'overdue', $test['reason'] );
 		$this->assertGreaterThanOrEqual( 1, $test['overdue'] );
 		$this->assertGreaterThan( 2 * HOUR_IN_SECONDS - 1, $test['overdue_oldest'] );
-		$this->assertFalse( wp_next_scheduled( CRHC_Cron_Health_Check::TEST_HOOK, array( $test['id'] ) ) );
+		$this->assertFalse( wp_next_scheduled( SPCR_Cron_Health_Check::TEST_HOOK, array( $test['id'] ) ) );
 
-		$stored = get_option( CRHC_Cron_Health_Check::OPTION );
+		$stored = get_option( SPCR_Cron_Health_Check::OPTION );
 		$this->assertSame( 'failed', $stored['status'] );
 		$this->assertSame( 'overdue', $stored['reason'] );
 	}
@@ -149,48 +149,48 @@ final class SpawnTest extends WP_UnitTestCase {
 	 * scheduled step with reason 'schedule'.
 	 */
 	public function test_schedule_refusal_fails_before_spawning() {
-		add_filter( 'crhc_cron_disabled', '__return_false' );
+		add_filter( 'spcr_cron_disabled', '__return_false' );
 
 		// No pre-existing events so the overdue check passes and we reach scheduling.
 		$cron = _get_cron_array();
 		_set_cron_array( array() );
 
 		$block = function () {
-			return new WP_Error( 'crhc_test_block', 'nope' );
+			return new WP_Error( 'spcr_test_block', 'nope' );
 		};
 		add_filter( 'pre_schedule_event', $block );
 
-		$test = CRHC_Cron_Health_Check::instance()->run_test();
+		$test = SPCR_Cron_Health_Check::instance()->run_test();
 
 		remove_filter( 'pre_schedule_event', $block );
-		remove_filter( 'crhc_cron_disabled', '__return_false' );
+		remove_filter( 'spcr_cron_disabled', '__return_false' );
 		_set_cron_array( $cron );
 
 		$this->assertSame( 'failed', $test['status'] );
 		$this->assertSame( 'schedule', $test['reason'] );
 		$this->assertStringContainsString( 'nope', $test['message'] );
 		$this->assertNull( $test['spawn'] );
-		$this->assertFalse( wp_next_scheduled( CRHC_Cron_Health_Check::TEST_HOOK, array( $test['id'] ) ) );
+		$this->assertFalse( wp_next_scheduled( SPCR_Cron_Health_Check::TEST_HOOK, array( $test['id'] ) ) );
 	}
 
 	/**
 	 * A fired test with no overdue events passes with overdue === 0.
 	 */
 	public function test_fired_no_overdue_passes() {
-		add_filter( 'crhc_cron_disabled', '__return_false' );
+		add_filter( 'spcr_cron_disabled', '__return_false' );
 
 		// Empty the cron array so no pre-existing events trip the overdue check.
 		$cron = _get_cron_array();
 		_set_cron_array( array() );
 
-		$instance = CRHC_Cron_Health_Check::instance();
+		$instance = SPCR_Cron_Health_Check::instance();
 		$test     = $instance->run_test();
 
-		do_action( CRHC_Cron_Health_Check::TEST_HOOK, $test['id'] );
-		$stored = get_option( CRHC_Cron_Health_Check::OPTION );
+		do_action( SPCR_Cron_Health_Check::TEST_HOOK, $test['id'] );
+		$stored = get_option( SPCR_Cron_Health_Check::OPTION );
 		$final  = $instance->finalize_test( $stored );
 
-		remove_filter( 'crhc_cron_disabled', '__return_false' );
+		remove_filter( 'spcr_cron_disabled', '__return_false' );
 		_set_cron_array( $cron );
 
 		$this->assertSame( 'passed', $final['status'] );
@@ -202,7 +202,7 @@ final class SpawnTest extends WP_UnitTestCase {
 	 */
 	public function test_render_page_deletes_option() {
 		update_option(
-			CRHC_Cron_Health_Check::OPTION,
+			SPCR_Cron_Health_Check::OPTION,
 			array(
 				'id'      => 'x',
 				'started' => time(),
@@ -215,10 +215,10 @@ final class SpawnTest extends WP_UnitTestCase {
 		wp_set_current_user( $admin_id );
 
 		ob_start();
-		CRHC_Cron_Health_Check::instance()->render_page();
+		SPCR_Cron_Health_Check::instance()->render_page();
 		ob_end_clean();
 
-		$this->assertFalse( get_option( CRHC_Cron_Health_Check::OPTION, false ) );
+		$this->assertFalse( get_option( SPCR_Cron_Health_Check::OPTION, false ) );
 		wp_set_current_user( 0 );
 	}
 
@@ -230,15 +230,15 @@ final class SpawnTest extends WP_UnitTestCase {
 	public function test_finalize_preserves_fired_written_by_other_process() {
 		global $wpdb;
 
-		$instance = CRHC_Cron_Health_Check::instance();
+		$instance = SPCR_Cron_Health_Check::instance();
 		$running  = array(
 			'id'      => 'x',
 			'started' => time(),
 			'fired'   => null,
 			'status'  => 'running',
 		);
-		update_option( CRHC_Cron_Health_Check::OPTION, $running, false );
-		get_option( CRHC_Cron_Health_Check::OPTION ); // Prime the runtime cache.
+		update_option( SPCR_Cron_Health_Check::OPTION, $running, false );
+		get_option( SPCR_Cron_Health_Check::OPTION ); // Prime the runtime cache.
 
 		// Simulate the spawned process writing the result directly to the DB,
 		// leaving this process's cached copy stale (fired=null).
@@ -254,7 +254,7 @@ final class SpawnTest extends WP_UnitTestCase {
 		$wpdb->update(
 			$wpdb->options,
 			array( 'option_value' => maybe_serialize( $fired ) ),
-			array( 'option_name' => CRHC_Cron_Health_Check::OPTION )
+			array( 'option_name' => SPCR_Cron_Health_Check::OPTION )
 		);
 
 		// Stash a spawn payload exactly as capture_spawn() does.
@@ -272,7 +272,7 @@ final class SpawnTest extends WP_UnitTestCase {
 		$this->assertSame( $fired['fired'], $merged['fired'] );
 		$this->assertSame( 200, $merged['spawn']['code'] );
 
-		$stored = get_option( CRHC_Cron_Health_Check::OPTION );
+		$stored = get_option( SPCR_Cron_Health_Check::OPTION );
 		$this->assertSame( 'passed', $stored['status'] );
 		$this->assertSame( 200, $stored['spawn']['code'] );
 	}
@@ -282,13 +282,13 @@ final class SpawnTest extends WP_UnitTestCase {
 	 */
 	public function test_disabled_flag() {
 		add_filter(
-			'crhc_cron_disabled',
+			'spcr_cron_disabled',
 			function () {
 				return true;
 			}
 		);
-		$this->assertTrue( CRHC_Cron_Health_Check::is_cron_disabled() );
-		remove_all_filters( 'crhc_cron_disabled' );
+		$this->assertTrue( SPCR_Cron_Health_Check::is_cron_disabled() );
+		remove_all_filters( 'spcr_cron_disabled' );
 	}
 
 	/**
@@ -296,20 +296,20 @@ final class SpawnTest extends WP_UnitTestCase {
 	 */
 	public function test_status_marks_timeout() {
 		update_option(
-			CRHC_Cron_Health_Check::OPTION,
+			SPCR_Cron_Health_Check::OPTION,
 			array(
 				'id'      => 'x',
-				'started' => time() - ( CRHC_TEST_TIMEOUT + 10 ),
+				'started' => time() - ( SPCR_TEST_TIMEOUT + 10 ),
 				'fired'   => null,
 				'status'  => 'running',
 			),
 			false
 		);
 
-		$summary = CRHC_Cron_Health_Check::summarize_test(
-			get_option( CRHC_Cron_Health_Check::OPTION ),
+		$summary = SPCR_Cron_Health_Check::summarize_test(
+			get_option( SPCR_Cron_Health_Check::OPTION ),
 			time(),
-			CRHC_Cron_Health_Check::test_timeout()
+			SPCR_Cron_Health_Check::test_timeout()
 		);
 
 		$this->assertSame( 'failed', $summary['status'] );

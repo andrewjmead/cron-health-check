@@ -2,7 +2,7 @@
 /**
  * Integration test bootstrap: loads the WordPress test suite via wp-env.
  *
- * @package CRHC_Cron_Health_Check
+ * @package SPCR_Cron_Health_Check
  */
 
 // wp-env exposes the tests directory inside the container.
