@@ -68,15 +68,10 @@ final class OverdueVerdictTest extends SPCR_Unit_TestCase {
 	}
 
 	/**
-	 * A still-running record fails on overdue before the event is scheduled.
+	 * A still-running record keeps its status; overdue data is attached but
+	 * the verdict waits for a finished test.
 	 */
-	public function test_running_with_overdue_fails() {
-		Brain\Monkey\Functions\when( '_n' )->alias(
-			function ( $single, $plural, $n ) {
-				return 1 === $n ? $single : $plural;
-			}
-		);
-
+	public function test_running_with_overdue_stays_running() {
 		$running = array(
 			'id'      => 'x',
 			'started' => 1000,
@@ -87,9 +82,11 @@ final class OverdueVerdictTest extends SPCR_Unit_TestCase {
 
 		$test = SPCR_Cron_Health_Check::apply_overdue_verdict( $running, 1, 3600, 1800 );
 
-		$this->assertSame( 'failed', $test['status'] );
-		$this->assertSame( 'overdue', $test['reason'] );
-		$this->assertStringContainsString( '1 scheduled event is overdue', $test['message'] );
+		$this->assertSame( 'running', $test['status'] );
+		$this->assertNull( $test['reason'] );
+		$this->assertSame( 1, $test['overdue'] );
+		$this->assertSame( 3600, $test['overdue_oldest'] );
+		$this->assertArrayNotHasKey( 'message', $test );
 	}
 
 	/**

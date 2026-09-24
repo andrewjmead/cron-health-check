@@ -236,48 +236,143 @@ final class SPCR_Cron_Health_Check {
 				'ajaxUrl'   => admin_url( 'admin-ajax.php' ),
 				'nonce'     => wp_create_nonce( 'spcr_nonce' ),
 				'timeout'   => self::test_timeout(),
+				'grace'     => (int) ( self::OVERDUE_GRACE / 60 ),
+				'timezone'  => wp_timezone_string(),
 				'altCron'   => self::is_alternate_cron(),
 				'homeUrl'   => home_url( '/' ),
 				'wpVersion' => get_bloginfo( 'version' ),
 				'version'   => SPCR_VERSION,
 				'i18n'      => array(
-					'failed'            => __( 'Failed', 'spawn-cron-health-check' ),
-					'passedTitle'       => self::result_title( 'passed' ),
-					'failedTitle'       => self::result_title( 'failed' ),
-					'requestFailed'     => __( 'Request failed. Check your connection and try again.', 'spawn-cron-health-check' ),
-					'couldNotStart'     => __( 'Failed to schedule a test cron event.', 'spawn-cron-health-check' ),
-					'timeout'           => __( 'The event was scheduled but never ran.', 'spawn-cron-health-check' ),
+					'failed'               => __( 'Failed', 'spawn-cron-health-check' ),
+					'requestFailed'        => __( 'Request failed. Check your connection and try again.', 'spawn-cron-health-check' ),
+					'couldNotStart'        => __( 'Failed to schedule a test cron event.', 'spawn-cron-health-check' ),
+					'timeout'              => __( 'The event was scheduled but never ran.', 'spawn-cron-health-check' ),
 					/* translators: 1: duration in seconds, 2: trigger source. */
-					'firedIn'           => __( 'Cron fired in %1$ss via %2$s.', 'spawn-cron-health-check' ),
+					'firedIn'              => __( 'Cron fired in %1$ss via %2$s.', 'spawn-cron-health-check' ),
 					/* translators: %s: duration in seconds. */
-					'firedInNoSource'   => __( 'Cron fired in %ss.', 'spawn-cron-health-check' ),
-					'neverRan'          => __( 'The event was scheduled but never ran.', 'spawn-cron-health-check' ),
-					'viewReport'        => __( 'View report', 'spawn-cron-health-check' ),
-					'hideReport'        => __( 'Hide report', 'spawn-cron-health-check' ),
-					'copyReport'        => __( 'Copy report', 'spawn-cron-health-check' ),
-					'copied'            => __( 'Copied', 'spawn-cron-health-check' ),
-					'copyFailed'        => __( 'Copy failed', 'spawn-cron-health-check' ),
-					'statusPassed'      => __( 'Passed', 'spawn-cron-health-check' ),
-					'statusFailed'      => __( 'Failed', 'spawn-cron-health-check' ),
-					'statusSkipped'     => __( 'Not run', 'spawn-cron-health-check' ),
-					/* translators: 1: site URL, 2: WordPress version, 3: plugin version. */
-					'reportHeader'      => __( 'Cron Health Check report for %1$s (WordPress %2$s, plugin %3$s)', 'spawn-cron-health-check' ),
-					'disabledUndefined' => __( 'The option DISABLE_WP_CRON is not defined. WP-Cron is enabled.', 'spawn-cron-health-check' ),
-					'disabledFalse'     => __( 'The option DISABLE_WP_CRON is set to false. WP-Cron is enabled.', 'spawn-cron-health-check' ),
-					'disabledTrue'      => __( 'The option DISABLE_WP_CRON is set to true. WP-Cron is disabled and WordPress will not be able to run cron events.', 'spawn-cron-health-check' ),
-					'overdueNone'       => __( 'No overdue cron events were found.', 'spawn-cron-health-check' ),
+					'firedInNoSource'      => __( 'Cron fired in %ss.', 'spawn-cron-health-check' ),
+					'neverRan'             => __( 'The event was scheduled but never ran.', 'spawn-cron-health-check' ),
+					'notRun'               => __( 'Not run', 'spawn-cron-health-check' ),
+					'disabledUndefined'    => __( 'The option DISABLE_WP_CRON is not defined. WP-Cron is enabled.', 'spawn-cron-health-check' ),
+					'disabledFalse'        => __( 'The option DISABLE_WP_CRON is set to false. WP-Cron is enabled.', 'spawn-cron-health-check' ),
+					'disabledTrue'         => __( 'The option DISABLE_WP_CRON is set to true. WP-Cron is disabled and WordPress will not be able to run cron events.', 'spawn-cron-health-check' ),
+					'overdueNone'          => __( 'No overdue cron events were found.', 'spawn-cron-health-check' ),
 					/* translators: %s: overdue event count. */
-					'overdueSome'       => __( 'There are %s cron event(s) that are more than 30 minutes overdue. WP-Cron is not working.', 'spawn-cron-health-check' ),
-					'scheduledOk'       => __( 'Scheduled a test cron event.', 'spawn-cron-health-check' ),
-					'scheduleFailed'    => __( 'Failed to schedule a test cron event.', 'spawn-cron-health-check' ),
+					'overdueSome'          => __( 'There are %s cron event(s) that are more than 30 minutes overdue. WP-Cron is not working.', 'spawn-cron-health-check' ),
+					'scheduledOk'          => __( 'Scheduled a test cron event.', 'spawn-cron-health-check' ),
+					'scheduleFailed'       => __( 'Failed to schedule a test cron event.', 'spawn-cron-health-check' ),
 					/* translators: %s: HTTP status code. */
-					'spawnOk'           => __( 'spawn_cron() sent the loopback request to wp-cron.php (HTTP %s).', 'spawn-cron-health-check' ),
-					'spawnSent'         => __( 'spawn_cron() sent the loopback request to wp-cron.php.', 'spawn-cron-health-check' ),
-					'spawnAlternate'    => __( 'ALTERNATE_WP_CRON is enabled; cron is triggered by a page redirect instead.', 'spawn-cron-health-check' ),
+					'spawnOk'              => __( 'spawn_cron() sent the loopback request to wp-cron.php (HTTP %s).', 'spawn-cron-health-check' ),
+					'spawnSent'            => __( 'spawn_cron() sent the loopback request to wp-cron.php.', 'spawn-cron-health-check' ),
+					'spawnAlternate'       => __( 'ALTERNATE_WP_CRON is enabled; cron is triggered by a page redirect instead.', 'spawn-cron-health-check' ),
 					/* translators: %s: HTTP status code. */
-					'spawnHttpError'    => __( 'wp-cron.php responded with HTTP %s.', 'spawn-cron-health-check' ),
+					'spawnHttpError'       => __( 'wp-cron.php responded with HTTP %s.', 'spawn-cron-health-check' ),
 					/* translators: %s: timeout in seconds. */
-					'waitingUpTo'       => __( 'Waiting up to %ss for the event to fire…', 'spawn-cron-health-check' ),
+					'waitingUpTo'          => __( 'Waiting up to %ss for the event to fire…', 'spawn-cron-health-check' ),
+					'bannerPassed'         => __( 'WP-Cron is working correctly', 'spawn-cron-health-check' ),
+					'bannerFailed'         => __( 'WP-Cron is not working correctly', 'spawn-cron-health-check' ),
+					'whyMeans'             => __( 'What this usually means', 'spawn-cron-health-check' ),
+					'whyChecks'            => __( 'Things to check', 'spawn-cron-health-check' ),
+					'r1Pass'               => __( 'WP-Cron is enabled', 'spawn-cron-health-check' ),
+					'r1Undefined'          => __( 'DISABLE_WP_CRON is not defined, so WordPress triggers scheduled events itself whenever the site gets a visitor.', 'spawn-cron-health-check' ),
+					'r1False'              => __( 'DISABLE_WP_CRON is set to false, so WordPress triggers scheduled events itself whenever the site gets a visitor.', 'spawn-cron-health-check' ),
+					'r1Fail'               => __( 'WP-Cron is disabled', 'spawn-cron-health-check' ),
+					'r1FailDetail'         => __( 'DISABLE_WP_CRON is set to true in wp-config.php, so WordPress will not run scheduled events on its own.', 'spawn-cron-health-check' ),
+					'r1Means'              => __( 'Either you or your host added this line to wp-config.php. That is fine when a real server cron job calls wp-cron.php on a schedule — many hosts set this up for performance. If nothing is calling wp-cron.php, scheduled tasks will never run.', 'spawn-cron-health-check' ),
+					'r1Check1'             => __( 'Look for define( \'DISABLE_WP_CRON\', true ) in wp-config.php. If you did not add it, your host probably did.', 'spawn-cron-health-check' ),
+					'r1Check2'             => __( 'Ask your host whether they run a server cron job for wp-cron.php. If they do not, either remove the line or set one up.', 'spawn-cron-health-check' ),
+					'r1Check3'             => __( 'The overdue events step below shows whether scheduled events are actually being run.', 'spawn-cron-health-check' ),
+					'r2Pass'               => __( 'Test cron event scheduled', 'spawn-cron-health-check' ),
+					'r2PassDetail'         => __( 'WordPress accepted a one-time test event and added it to the cron queue.', 'spawn-cron-health-check' ),
+					'r2Fail'               => __( 'Test cron event could not be scheduled', 'spawn-cron-health-check' ),
+					/* translators: %s: error message. */
+					'r2FailDetail'         => __( 'WordPress refused to add the test event to the cron queue: %s', 'spawn-cron-health-check' ),
+					'r2Means'              => __( 'WordPress itself rejected the event. This is almost always another plugin hooking into cron scheduling, or a corrupted cron option in the database.', 'spawn-cron-health-check' ),
+					'r2Check1'             => __( 'Deactivate plugins that manage or replace WP-Cron and run the check again.', 'spawn-cron-health-check' ),
+					'r2Check2'             => __( 'Check the PHP error log for errors during this request.', 'spawn-cron-health-check' ),
+					'r2Check3'             => __( 'If the cron option in wp_options is corrupted, a cron management plugin can rebuild it.', 'spawn-cron-health-check' ),
+					/* translators: %s: error message. */
+					'r2StartDetail'        => __( 'The request to start the check did not return a valid response: %s', 'spawn-cron-health-check' ),
+					'r2StartMeans'         => __( 'The check could not begin, so nothing was tested yet.', 'spawn-cron-health-check' ),
+					'r2StartCheck1'        => __( 'Check the PHP error log for a fatal error or memory limit hit.', 'spawn-cron-health-check' ),
+					'r2StartCheck2'        => __( 'A security or firewall plugin may be blocking requests to admin-ajax.php.', 'spawn-cron-health-check' ),
+					'r2StartCheck3'        => __( 'Run the check again.', 'spawn-cron-health-check' ),
+					'r3Pass'               => __( 'WordPress can reach itself', 'spawn-cron-health-check' ),
+					/* translators: %s: HTTP status code. */
+					'r3PassDetail'         => __( 'WordPress requested its own wp-cron.php and the server answered with HTTP %s. This "loopback" request is how WP-Cron runs in the background, so it needs to work.', 'spawn-cron-health-check' ),
+					'r3PassDetailNoCode'   => __( 'WordPress requested its own wp-cron.php and the server accepted the request. This "loopback" request is how WP-Cron runs in the background, so it needs to work.', 'spawn-cron-health-check' ),
+					'r3Alternate'          => __( 'ALTERNATE_WP_CRON is enabled, so WordPress triggers cron with a page redirect instead of a loopback request.', 'spawn-cron-health-check' ),
+					'r3Fail'               => __( 'WordPress cannot reach itself', 'spawn-cron-health-check' ),
+					/* translators: %s: HTTP error message. */
+					'r3ErrDetail'          => __( 'WordPress tried to trigger the test by requesting its own wp-cron.php, but the request failed: %s. Nothing scheduled will run until this request works.', 'spawn-cron-health-check' ),
+					'r3ErrMeans'           => __( 'Something between your server and your own domain is blocking the connection. This is almost always a hosting or server configuration issue, not a WordPress issue.', 'spawn-cron-health-check' ),
+					'r3ErrCheck1'          => __( 'Your host\'s firewall or security rules block loopback requests — ask your host to allow the server to reach its own site URL.', 'spawn-cron-health-check' ),
+					'r3ErrCheck2'          => __( 'The site is behind HTTP basic auth, a maintenance password, or an IP allowlist that also blocks the server itself.', 'spawn-cron-health-check' ),
+					'r3ErrCheck3'          => __( 'DNS for your domain does not resolve from inside the server, or the SSL certificate is invalid or self-signed.', 'spawn-cron-health-check' ),
+					'r3ErrCheck4'          => __( 'As a workaround, many hosts recommend disabling WP-Cron and running wp-cron.php from a real server cron job instead.', 'spawn-cron-health-check' ),
+					/* translators: %s: HTTP status code. */
+					'r3HttpDetail'         => __( 'WordPress requested its own wp-cron.php, but the server responded with HTTP %s.', 'spawn-cron-health-check' ),
+					'r3Http500Means'       => __( 'A 500 means PHP crashed while running wp-cron.php. Usually a scheduled callback from a plugin or theme is fatal-erroring, so every event after it never runs.', 'spawn-cron-health-check' ),
+					'r3Http500Check1'      => __( 'Check the PHP error log for the fatal error and which plugin or theme it comes from.', 'spawn-cron-health-check' ),
+					'r3Http500Check2'      => __( 'Deactivate recently added or updated plugins and run the check again.', 'spawn-cron-health-check' ),
+					'r3Http500Check3'      => __( 'The overdue events below show which scheduled events are being blocked.', 'spawn-cron-health-check' ),
+					'r3HttpMeans'          => __( 'The server is refusing or failing to serve wp-cron.php, so WordPress cannot run its scheduled events.', 'spawn-cron-health-check' ),
+					'r3HttpCheck1'         => __( 'A security plugin, firewall, or server rule may be blocking wp-cron.php — ask your host or check your security plugin\'s logs.', 'spawn-cron-health-check' ),
+					'r3HttpCheck2'         => __( 'HTTP basic auth or a maintenance mode password on the site also blocks the server\'s own requests.', 'spawn-cron-health-check' ),
+					'r3HttpCheck3'         => __( 'Check the server error log for requests to wp-cron.php.', 'spawn-cron-health-check' ),
+					'r4Pass'               => __( 'Test cron event fired', 'spawn-cron-health-check' ),
+					/* translators: 1: duration in seconds, 2: trigger source. */
+					'r4PassDetail'         => __( 'The test event ran %1$s seconds after it was scheduled (triggered via %2$s). Scheduled tasks on this site are being executed.', 'spawn-cron-health-check' ),
+					/* translators: %s: duration in seconds. */
+					'r4PassDetailNoSource' => __( 'The test event ran %s seconds after it was scheduled. Scheduled tasks on this site are being executed.', 'spawn-cron-health-check' ),
+					'r4Fail'               => __( 'Test cron event did not fire', 'spawn-cron-health-check' ),
+					/* translators: %s: timeout in seconds. */
+					'r4FailDetail'         => __( 'WordPress reached wp-cron.php, but the test event had not run after %s seconds.', 'spawn-cron-health-check' ),
+					'r4Means'              => __( 'Cron is being triggered but is not getting through its queue. Usually one earlier event has a callback that hangs or crashes, which stops everything scheduled after it.', 'spawn-cron-health-check' ),
+					'r4Check1'             => __( 'Look at the overdue events below — the oldest one is the most likely culprit; the hook name usually tells you which plugin owns it.', 'spawn-cron-health-check' ),
+					'r4Check2'             => __( 'Check the PHP error log for errors during wp-cron.php requests.', 'spawn-cron-health-check' ),
+					'r4Check3'             => __( 'Run the check again — a cron run may simply have been in progress.', 'spawn-cron-health-check' ),
+					'r4AltMeans'           => __( 'ALTERNATE_WP_CRON only fires on front-end page loads, so a quiet site may need more time.', 'spawn-cron-health-check' ),
+					'r4AltCheck1'          => __( 'Open the front end of the site in another tab, then run the check again.', 'spawn-cron-health-check' ),
+					'r2Skip'               => __( 'Schedule a test cron event', 'spawn-cron-health-check' ),
+					'r3Skip'               => __( 'Attempt to run the test cron event', 'spawn-cron-health-check' ),
+					'r4Skip'               => __( 'Confirm the test cron event fired', 'spawn-cron-health-check' ),
+					'r5Skip'               => __( 'Check for overdue cron events', 'spawn-cron-health-check' ),
+					'r5Pass'               => __( 'No overdue cron events', 'spawn-cron-health-check' ),
+					/* translators: 1: total scheduled events, 2: grace period in minutes. */
+					'r5PassDetail'         => __( 'All %1$s scheduled events are on time. Nothing is more than %2$s minutes past its scheduled run.', 'spawn-cron-health-check' ),
+					/* translators: %s: grace period in minutes. */
+					'r5PassDetailOne'      => __( 'The 1 scheduled event is on time. Nothing is more than %s minutes past its scheduled run.', 'spawn-cron-health-check' ),
+					'r5FailOne'            => __( '1 overdue cron event', 'spawn-cron-health-check' ),
+					/* translators: %s: overdue event count. */
+					'r5FailMany'           => __( '%s overdue cron events', 'spawn-cron-health-check' ),
+					/* translators: %s: grace period in minutes. */
+					'r5FailDetail'         => __( 'These scheduled events are more than %s minutes past their scheduled time and still have not run.', 'spawn-cron-health-check' ),
+					'colEvent'             => __( 'Event', 'spawn-cron-health-check' ),
+					'colScheduled'         => __( 'Scheduled for', 'spawn-cron-health-check' ),
+					'colOverdue'           => __( 'Overdue by', 'spawn-cron-health-check' ),
+					/* translators: %s: number of overdue events not shown. */
+					'r5More'               => __( '…and %s more.', 'spawn-cron-health-check' ),
+					'r5Means'              => __( 'WP-Cron only runs when your site is visited. If the site has been quiet, run this check again — if the events clear, nothing is wrong.', 'spawn-cron-health-check' ),
+					'r5MeansFailed'        => __( ' If they stay overdue, WordPress is queuing work but never getting to run it, which matches the failure above.', 'spawn-cron-health-check' ),
+					'r5MeansPassed'        => __( ' If they stay overdue even though the test event fired, something is stopping WordPress from getting through its queue — often one event whose callback crashes or hangs.', 'spawn-cron-health-check' ),
+					'r5Check1'             => __( 'Run the check again after visiting the front end of the site.', 'spawn-cron-health-check' ),
+					'r5Check2'             => __( 'The oldest overdue event is the most likely culprit; its hook name usually tells you which plugin owns it.', 'spawn-cron-health-check' ),
+					'r5Check3'             => __( 'Check the PHP error log for errors during wp-cron.php requests.', 'spawn-cron-health-check' ),
+					/* translators: %s: number of days. */
+					'dayOne'               => __( '%s day', 'spawn-cron-health-check' ),
+					/* translators: %s: number of days. */
+					'dayMany'              => __( '%s days', 'spawn-cron-health-check' ),
+					/* translators: %s: number of hours. */
+					'hourOne'              => __( '%s hour', 'spawn-cron-health-check' ),
+					/* translators: %s: number of hours. */
+					'hourMany'             => __( '%s hours', 'spawn-cron-health-check' ),
+					/* translators: %s: number of minutes. */
+					'minuteOne'            => __( '%s minute', 'spawn-cron-health-check' ),
+					/* translators: %s: number of minutes. */
+					'minuteMany'           => __( '%s minutes', 'spawn-cron-health-check' ),
+					/* translators: separator between duration units. */
+					'durJoin'              => __( ', ', 'spawn-cron-health-check' ),
 				),
 			)
 		);
@@ -294,9 +389,7 @@ final class SPCR_Cron_Health_Check {
 		// The result only lives for the duration of a run; nothing persists across page loads.
 		delete_option( self::OPTION );
 
-		$now     = time();
-		$summary = self::summarize_test( null, $now, self::test_timeout() );
-		$lock    = self::lock_state( self::get_lock(), microtime( true ), self::lock_timeout() );
+		$lock = self::lock_state( self::get_lock(), microtime( true ), self::lock_timeout() );
 		?>
 		<div class="wrap spcr-wrap">
 			<section class="spcr-card spcr-test-panel">
@@ -313,10 +406,10 @@ final class SPCR_Cron_Health_Check {
 					<?php
 					$steps = array(
 						'enabled'   => array( __( 'Check that WP-Cron is enabled', 'spawn-cron-health-check' ), '<path d="M12 2v10"/><path d="M18.4 6.6a9 9 0 1 1-12.77.04"/>' ),
-						'overdue'   => array( __( 'Check for overdue cron events', 'spawn-cron-health-check' ), '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>' ),
 						'scheduled' => array( __( 'Schedule a test cron event', 'spawn-cron-health-check' ), '<path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/>' ),
 						'spawning'  => array( __( 'Attempt to run the test cron event', 'spawn-cron-health-check' ), '<path d="M6 4.5v15a1 1 0 0 0 1.5.86l12-7.5a1 1 0 0 0 0-1.72l-12-7.5A1 1 0 0 0 6 4.5z"/>' ),
 						'waiting'   => array( __( 'Confirm the test cron event fired', 'spawn-cron-health-check' ), '<path d="M5 22h14"/><path d="M5 2h14"/><path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22"/><path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"/>' ),
+						'overdue'   => array( __( 'Check for overdue cron events', 'spawn-cron-health-check' ), '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>' ),
 					);
 					$n     = 0;
 					foreach ( $steps as $key => $step ) :
@@ -338,7 +431,7 @@ final class SPCR_Cron_Health_Check {
 					<?php endforeach; ?>
 				</ol>
 
-				<div id="spcr-result" class="spcr-result" aria-live="polite"><?php $this->render_result( $summary ); ?></div>
+				<div id="spcr-result" class="spcr-result" aria-live="polite"></div>
 
 				<?php if ( 'stale' === $lock['state'] ) : ?>
 					<p class="spcr-lock-action">
@@ -351,44 +444,6 @@ final class SPCR_Cron_Health_Check {
 
 		</div>
 		<?php
-	}
-
-	/**
-	 * Render the result card contents (also used as the page-load default).
-	 *
-	 * @param array $summary Result of summarize_test().
-	 */
-	private function render_result( array $summary ) {
-		if ( ! in_array( $summary['status'], array( 'passed', 'failed' ), true ) ) {
-			return;
-		}
-		$passed = 'passed' === $summary['status'];
-		?>
-		<div class="spcr-result-card spcr-status-<?php echo esc_attr( $summary['status'] ); ?>">
-			<span class="spcr-result-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
-			<?php if ( $passed ) : ?>
-				<path class="spcr-result-mark" d="m4 12 5 5L20 6"/>
-			<?php else : ?>
-				<path class="spcr-result-mark" d="M18 6 6 18"/><path class="spcr-result-mark" d="m6 6 12 12"/>
-			<?php endif; ?>
-			</svg></span>
-			<strong class="spcr-result-status"><?php echo esc_html( self::result_title( $summary['status'] ) ); ?></strong>
-			<?php if ( ! $passed ) : ?>
-				<p class="spcr-result-message"><?php echo esc_html( $summary['message'] ); ?></p>
-			<?php endif; ?>
-		</div>
-		<?php
-	}
-
-	/**
-	 * Heading for the result card.
-	 *
-	 * @param string $status 'passed' or 'failed'.
-	 */
-	public static function result_title( string $status ): string {
-		return 'passed' === $status
-			? __( 'Cron Health Check Passed', 'spawn-cron-health-check' )
-			: __( 'Cron Health Check Failed', 'spawn-cron-health-check' );
 	}
 
 	// ---------------------------------------------------------------------
@@ -509,11 +564,6 @@ final class SPCR_Cron_Health_Check {
 		$test = $this->with_overdue( $test );
 		update_option( self::OPTION, $test, false );
 
-		// Overdue events fail the check before anything is scheduled or spawned.
-		if ( 'failed' === $test['status'] ) {
-			return $test;
-		}
-
 		$scheduled = wp_schedule_single_event( time() - 1, self::TEST_HOOK, array( $id ), true );
 		if ( true !== $scheduled ) {
 			$test['status']  = 'failed';
@@ -587,10 +637,22 @@ final class SPCR_Cron_Health_Check {
 	 */
 	private function with_overdue( array $test ): array {
 		if ( ! isset( $test['overdue'], $test['overdue_oldest'] ) ) {
-			$rows                   = self::get_event_rows();
-			$parts                  = self::partition_overdue( $rows, time(), self::OVERDUE_GRACE );
+			$rows  = self::get_event_rows();
+			$parts = self::partition_overdue( $rows, time(), self::OVERDUE_GRACE );
+
 			$test['overdue']        = count( $parts['overdue'] );
 			$test['overdue_oldest'] = empty( $parts['overdue'] ) ? 0 : time() - (int) $parts['overdue'][0]['timestamp'];
+			$test['total_events']   = count( $rows );
+			$test['overdue_events'] = array_map(
+				function ( $row ) {
+					return array(
+						'hook'       => $row['hook'],
+						'timestamp'  => (int) $row['timestamp'],
+						'overdue_by' => (int) $row['overdue_by'],
+					);
+				},
+				array_slice( $parts['overdue'], 0, 50 )
+			);
 		}
 		return self::apply_overdue_verdict( $test, (int) $test['overdue'], (int) $test['overdue_oldest'], self::OVERDUE_GRACE );
 	}
@@ -975,7 +1037,8 @@ final class SPCR_Cron_Health_Check {
 	}
 
 	/**
-	 * Apply the overdue rule: a fired test still fails if events are overdue.
+	 * Apply the overdue rule: overdue events flip a passed test to failed but
+	 * never change a running test or an already-failed record's reason.
 	 *
 	 * @param array $test       Test record.
 	 * @param int   $overdue    Number of events overdue by more than $grace.
@@ -987,7 +1050,7 @@ final class SPCR_Cron_Health_Check {
 		$test['overdue']        = $overdue;
 		$test['overdue_oldest'] = $oldest_age;
 
-		if ( in_array( $test['status'] ?? '', array( 'passed', 'running' ), true ) && $overdue > 0 ) {
+		if ( 'passed' === ( $test['status'] ?? '' ) && $overdue > 0 ) {
 			$oldest_text     = function_exists( 'human_time_diff' )
 				? human_time_diff( time() - $oldest_age )
 				: sprintf( '%ds', $oldest_age );

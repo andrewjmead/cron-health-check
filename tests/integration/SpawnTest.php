@@ -118,30 +118,44 @@ final class SpawnTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * An event overdue by more than 30 minutes fails the check before the
-	 * test event is ever scheduled.
+	 * Overdue events never stop the run: the test event is still scheduled and
+	 * the overdue data is attached to the record. Once the test event fires,
+	 * the overdue verdict flips the passed record to failed/overdue.
 	 */
-	public function test_overdue_events_fail_before_scheduling() {
+	public function test_overdue_runs_last_and_flips_passed() {
 		add_filter( 'spcr_cron_disabled', '__return_false' );
 
 		// Schedule a bogus event far past the 30-minute grace before the run
 		// snapshots the overdue count.
 		wp_schedule_single_event( time() - 2 * HOUR_IN_SECONDS, 'spcr_bogus_overdue' );
 
-		$test = SPCR_Cron_Health_Check::instance()->run_test();
+		$instance = SPCR_Cron_Health_Check::instance();
+		$test     = $instance->run_test();
 
 		remove_filter( 'spcr_cron_disabled', '__return_false' );
-		wp_clear_scheduled_hook( 'spcr_bogus_overdue' );
 
-		$this->assertSame( 'failed', $test['status'] );
-		$this->assertSame( 'overdue', $test['reason'] );
+		// The run proceeded: no 'overdue' early failure, event was scheduled.
+		$this->assertNotSame( 'overdue', $test['reason'] ?? '' );
 		$this->assertGreaterThanOrEqual( 1, $test['overdue'] );
 		$this->assertGreaterThan( 2 * HOUR_IN_SECONDS - 1, $test['overdue_oldest'] );
-		$this->assertFalse( wp_next_scheduled( SPCR_Cron_Health_Check::TEST_HOOK, array( $test['id'] ) ) );
+		$this->assertIsInt( $test['total_events'] );
+		$this->assertIsArray( $test['overdue_events'] );
+		$this->assertNotEmpty( $test['overdue_events'] );
+		$this->assertSame( 'spcr_bogus_overdue', $test['overdue_events'][0]['hook'] );
+		$this->assertIsInt( $test['overdue_events'][0]['timestamp'] );
+		$this->assertIsInt( $test['overdue_events'][0]['overdue_by'] );
+		$this->assertNotFalse( wp_next_scheduled( SPCR_Cron_Health_Check::TEST_HOOK, array( $test['id'] ) ) );
 
-		$stored = get_option( SPCR_Cron_Health_Check::OPTION );
-		$this->assertSame( 'failed', $stored['status'] );
-		$this->assertSame( 'overdue', $stored['reason'] );
+		// Once the event fires, the finished record is failed/overdue.
+		do_action( SPCR_Cron_Health_Check::TEST_HOOK, $test['id'] );
+		$final = $instance->finalize_test( get_option( SPCR_Cron_Health_Check::OPTION ) );
+
+		wp_clear_scheduled_hook( 'spcr_bogus_overdue' );
+
+		$this->assertSame( 'failed', $final['status'] );
+		$this->assertSame( 'overdue', $final['reason'] );
+		$this->assertIsArray( $final['overdue_events'] );
+		$this->assertIsInt( $final['total_events'] );
 	}
 
 	/**
