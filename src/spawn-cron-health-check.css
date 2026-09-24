@@ -88,8 +88,8 @@
 	padding: 0;
 }
 
-.spcr-result:empty {
-	display: none;
+.spcr-result:not(:empty) {
+	margin-top: 24px;
 }
 
 .spcr-step {
@@ -259,6 +259,19 @@
 	font-size: 13px;
 	line-height: 1.55;
 	color: #3c434a;
+	padding: 16px;
+	border: 1px solid;
+	border-radius: 8px;
+}
+
+.spcr-report-passed {
+	background: #eef8f4;
+	border-color: #bfe3d5;
+}
+
+.spcr-report-failed {
+	background: #fcf0ef;
+	border-color: #efc6c2;
 }
 
 .spcr-report-banner {
@@ -320,6 +333,7 @@
 
 .spcr-report-list {
 	margin-top: 16px;
+	background: #fff;
 	border: 1px solid #dcdcde;
 	border-radius: 6px;
 	overflow: hidden;

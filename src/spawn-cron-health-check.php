@@ -431,6 +431,8 @@ final class SPCR_Cron_Health_Check {
 					<?php endforeach; ?>
 				</ol>
 
+				<div id="spcr-result" class="spcr-result" aria-live="polite"></div>
+
 				<?php if ( 'stale' === $lock['state'] ) : ?>
 					<p class="spcr-lock-action">
 						<button type="button" id="spcr-clear-lock" class="spcr-button spcr-button-secondary">
@@ -439,8 +441,6 @@ final class SPCR_Cron_Health_Check {
 					</p>
 				<?php endif; ?>
 			</section>
-
-			<section id="spcr-result" class="spcr-card spcr-result" aria-live="polite"></section>
 		</div>
 		<?php
 	}
