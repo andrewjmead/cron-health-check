@@ -342,7 +342,7 @@
 		stopPolling();
 		var waiting = stepEl( 'waiting' );
 		var wasActive = waiting && waiting.classList.contains( 'is-active' );
-		if ( test && 'passed' === test.status ) {
+		if ( test && ( 'passed' === test.status || null != test.fired ) ) {
 			setStep( 'waiting', 'done', firedText( test ) );
 		} else if ( wasActive && test && 'failed' === test.status ) {
 			setStep( 'waiting', 'failed', test.message || t( 'failed' ) );
@@ -430,7 +430,7 @@
 		}
 
 		if ( ! stopped ) {
-			if ( 'passed' === test.status ) {
+			if ( 'passed' === test.status || null != test.fired ) {
 				list.push( { step: 'waiting', state: 'done', text: firedText( test ), core: true } );
 			} else {
 				list.push( { step: 'waiting', state: 'active', text: fmt( t( 'waitingUpTo' ), data.timeout || 30 ), core: true } );
