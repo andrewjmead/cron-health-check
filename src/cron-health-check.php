@@ -11,33 +11,33 @@
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain:       cron-health-check
  *
- * @package Cron_Health_Check
+ * @package CRHC_Cron_Health_Check
  */
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'CHC_VERSION', '1.0.1' ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedConstantFound -- mandated short prefix.
-define( 'CHC_TEST_TIMEOUT', 30 ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedConstantFound -- mandated short prefix.
-define( 'CHC_TEST_TIMEOUT_ALTERNATE', 60 ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedConstantFound -- mandated short prefix.
+define( 'CRHC_VERSION', '1.0.1' ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedConstantFound -- mandated short prefix.
+define( 'CRHC_TEST_TIMEOUT', 30 ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedConstantFound -- mandated short prefix.
+define( 'CRHC_TEST_TIMEOUT_ALTERNATE', 60 ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedConstantFound -- mandated short prefix.
 
 /**
  * Cron Health Check plugin.
  */
-final class Cron_Health_Check {
+final class CRHC_Cron_Health_Check {
 
 	/**
 	 * Option that stores the last test result.
 	 *
 	 * @var string
 	 */
-	const OPTION = 'chc_test';
+	const OPTION = 'crhc_test';
 
 	/**
 	 * Cron hook used for the test event.
 	 *
 	 * @var string
 	 */
-	const TEST_HOOK = 'chc_test_event';
+	const TEST_HOOK = 'crhc_test_event';
 
 	/**
 	 * How overdue an event must be (seconds) before it counts as overdue.
@@ -51,12 +51,12 @@ final class Cron_Health_Check {
 	 *
 	 * @var string
 	 */
-	const REDIRECT_TRANSIENT = 'chc_activation_redirect';
+	const REDIRECT_TRANSIENT = 'crhc_activation_redirect';
 
 	/**
 	 * Singleton instance.
 	 *
-	 * @var Cron_Health_Check|null
+	 * @var CRHC_Cron_Health_Check|null
 	 */
 	private static $instance = null;
 
@@ -70,9 +70,9 @@ final class Cron_Health_Check {
 	/**
 	 * Get the singleton instance.
 	 *
-	 * @return Cron_Health_Check
+	 * @return CRHC_Cron_Health_Check
 	 */
-	public static function instance(): Cron_Health_Check {
+	public static function instance(): CRHC_Cron_Health_Check {
 		if ( null === self::$instance ) {
 			self::$instance = new self();
 		}
@@ -87,9 +87,9 @@ final class Cron_Health_Check {
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
 		add_action( 'in_admin_header', array( $this, 'remove_admin_notices' ), 1000 );
 		add_action( 'admin_init', array( $this, 'maybe_activation_redirect' ) );
-		add_action( 'wp_ajax_chc_start_test', array( $this, 'ajax_start_test' ) );
-		add_action( 'wp_ajax_chc_test_status', array( $this, 'ajax_test_status' ) );
-		add_action( 'wp_ajax_chc_clear_lock', array( $this, 'ajax_clear_lock' ) );
+		add_action( 'wp_ajax_crhc_start_test', array( $this, 'ajax_start_test' ) );
+		add_action( 'wp_ajax_crhc_test_status', array( $this, 'ajax_test_status' ) );
+		add_action( 'wp_ajax_crhc_clear_lock', array( $this, 'ajax_clear_lock' ) );
 		add_action( self::TEST_HOOK, array( $this, 'on_test_event' ) );
 		add_filter( 'site_status_tests', array( $this, 'site_status_tests' ) );
 		add_filter( 'debug_information', array( $this, 'debug_information' ) );
@@ -136,7 +136,7 @@ final class Cron_Health_Check {
 		 *
 		 * @param bool $disabled Value derived from DISABLE_WP_CRON.
 		 */
-		return (bool) apply_filters( 'chc_cron_disabled', $disabled ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- mandated short prefix.
+		return (bool) apply_filters( 'crhc_cron_disabled', $disabled ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- mandated short prefix.
 	}
 
 	/**
@@ -163,7 +163,7 @@ final class Cron_Health_Check {
 	 * @return int
 	 */
 	public static function test_timeout(): int {
-		return self::is_alternate_cron() ? CHC_TEST_TIMEOUT_ALTERNATE : CHC_TEST_TIMEOUT;
+		return self::is_alternate_cron() ? CRHC_TEST_TIMEOUT_ALTERNATE : CRHC_TEST_TIMEOUT;
 	}
 
 	// ---------------------------------------------------------------------
@@ -220,26 +220,26 @@ final class Cron_Health_Check {
 			'cron-health-check',
 			plugins_url( 'cron-health-check.css', __FILE__ ),
 			array(),
-			CHC_VERSION
+			CRHC_VERSION
 		);
 		wp_enqueue_script(
 			'cron-health-check',
 			plugins_url( 'cron-health-check.js', __FILE__ ),
 			array(),
-			CHC_VERSION,
+			CRHC_VERSION,
 			true
 		);
 		wp_localize_script(
 			'cron-health-check',
-			'chcData',
+			'crhcData',
 			array(
 				'ajaxUrl'   => admin_url( 'admin-ajax.php' ),
-				'nonce'     => wp_create_nonce( 'chc_nonce' ),
+				'nonce'     => wp_create_nonce( 'crhc_nonce' ),
 				'timeout'   => self::test_timeout(),
 				'altCron'   => self::is_alternate_cron(),
 				'homeUrl'   => home_url( '/' ),
 				'wpVersion' => get_bloginfo( 'version' ),
-				'version'   => CHC_VERSION,
+				'version'   => CRHC_VERSION,
 				'i18n'      => array(
 					'failed'            => __( 'Failed', 'cron-health-check' ),
 					'passedTitle'       => self::result_title( 'passed' ),
@@ -298,18 +298,18 @@ final class Cron_Health_Check {
 		$summary = self::summarize_test( null, $now, self::test_timeout() );
 		$lock    = self::lock_state( self::get_lock(), microtime( true ), self::lock_timeout() );
 		?>
-		<div class="wrap chc-wrap">
-			<section class="chc-card chc-test-panel">
-				<header class="chc-header">
+		<div class="wrap crhc-wrap">
+			<section class="crhc-card crhc-test-panel">
+				<header class="crhc-header">
 					<h1><?php esc_html_e( 'Cron Health Check', 'cron-health-check' ); ?></h1>
-					<p class="chc-subtitle"><?php esc_html_e( 'Check that WP-Cron is working correctly on your WordPress website', 'cron-health-check' ); ?></p>
+					<p class="crhc-subtitle"><?php esc_html_e( 'Check that WP-Cron is working correctly on your WordPress website', 'cron-health-check' ); ?></p>
 				</header>
 
-				<button type="button" id="chc-run-test" class="chc-button">
+				<button type="button" id="crhc-run-test" class="crhc-button">
 					<?php esc_html_e( 'Run Health Check', 'cron-health-check' ); ?>
 				</button>
 
-				<ol class="chc-stepper" id="chc-stepper">
+				<ol class="crhc-stepper" id="crhc-stepper">
 					<?php
 					$steps = array(
 						'enabled'   => array( __( 'Check that WP-Cron is enabled', 'cron-health-check' ), '<path d="M12 2v10"/><path d="M18.4 6.6a9 9 0 1 1-12.77.04"/>' ),
@@ -322,27 +322,27 @@ final class Cron_Health_Check {
 					foreach ( $steps as $key => $step ) :
 						++$n;
 						?>
-					<li class="chc-step" data-step="<?php echo esc_attr( $key ); ?>">
-						<span class="chc-dot"><svg class="chc-step-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><?php echo $step[1]; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static SVG path markup. ?></svg></span>
-						<span class="chc-step-body">
-							<span class="chc-step-num">
+					<li class="crhc-step" data-step="<?php echo esc_attr( $key ); ?>">
+						<span class="crhc-dot"><svg class="crhc-step-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><?php echo $step[1]; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static SVG path markup. ?></svg></span>
+						<span class="crhc-step-body">
+							<span class="crhc-step-num">
 							<?php
 							/* translators: %d: step number. */
 							echo esc_html( sprintf( __( 'Step %d', 'cron-health-check' ), $n ) );
 							?>
 							</span>
-							<span class="chc-step-label"><?php echo esc_html( $step[0] ); ?></span>
-							<span class="chc-step-status" data-status></span>
+							<span class="crhc-step-label"><?php echo esc_html( $step[0] ); ?></span>
+							<span class="crhc-step-status" data-status></span>
 						</span>
 					</li>
 					<?php endforeach; ?>
 				</ol>
 
-				<div id="chc-result" class="chc-result" aria-live="polite"><?php $this->render_result( $summary ); ?></div>
+				<div id="crhc-result" class="crhc-result" aria-live="polite"><?php $this->render_result( $summary ); ?></div>
 
 				<?php if ( 'stale' === $lock['state'] ) : ?>
-					<p class="chc-lock-action">
-						<button type="button" id="chc-clear-lock" class="chc-button chc-button-secondary">
+					<p class="crhc-lock-action">
+						<button type="button" id="crhc-clear-lock" class="crhc-button crhc-button-secondary">
 							<?php esc_html_e( 'Clear cron lock and retry', 'cron-health-check' ); ?>
 						</button>
 					</p>
@@ -364,17 +364,17 @@ final class Cron_Health_Check {
 		}
 		$passed = 'passed' === $summary['status'];
 		?>
-		<div class="chc-result-card chc-status-<?php echo esc_attr( $summary['status'] ); ?>">
-			<span class="chc-result-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+		<div class="crhc-result-card crhc-status-<?php echo esc_attr( $summary['status'] ); ?>">
+			<span class="crhc-result-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
 			<?php if ( $passed ) : ?>
-				<path class="chc-result-mark" d="m4 12 5 5L20 6"/>
+				<path class="crhc-result-mark" d="m4 12 5 5L20 6"/>
 			<?php else : ?>
-				<path class="chc-result-mark" d="M18 6 6 18"/><path class="chc-result-mark" d="m6 6 12 12"/>
+				<path class="crhc-result-mark" d="M18 6 6 18"/><path class="crhc-result-mark" d="m6 6 12 12"/>
 			<?php endif; ?>
 			</svg></span>
-			<strong class="chc-result-status"><?php echo esc_html( self::result_title( $summary['status'] ) ); ?></strong>
+			<strong class="crhc-result-status"><?php echo esc_html( self::result_title( $summary['status'] ) ); ?></strong>
 			<?php if ( ! $passed ) : ?>
-				<p class="chc-result-message"><?php echo esc_html( $summary['message'] ); ?></p>
+				<p class="crhc-result-message"><?php echo esc_html( $summary['message'] ); ?></p>
 			<?php endif; ?>
 		</div>
 		<?php
@@ -434,7 +434,7 @@ final class Cron_Health_Check {
 	 * Verify the AJAX nonce and capability, or die.
 	 */
 	private function verify_ajax() {
-		check_ajax_referer( 'chc_nonce' );
+		check_ajax_referer( 'crhc_nonce' );
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'cron-health-check' ) ), 403 );
 		}
@@ -1151,8 +1151,8 @@ final class Cron_Health_Check {
 	}
 }
 
-register_activation_hook( __FILE__, array( 'Cron_Health_Check', 'activate' ) );
-register_deactivation_hook( __FILE__, array( 'Cron_Health_Check', 'deactivate' ) );
-register_uninstall_hook( __FILE__, array( 'Cron_Health_Check', 'uninstall' ) );
+register_activation_hook( __FILE__, array( 'CRHC_Cron_Health_Check', 'activate' ) );
+register_deactivation_hook( __FILE__, array( 'CRHC_Cron_Health_Check', 'deactivate' ) );
+register_uninstall_hook( __FILE__, array( 'CRHC_Cron_Health_Check', 'uninstall' ) );
 
-Cron_Health_Check::instance();
+CRHC_Cron_Health_Check::instance();

@@ -2,19 +2,19 @@
 /**
  * Tests for summarize_test().
  *
- * @package Cron_Health_Check
+ * @package CRHC_Cron_Health_Check
  */
 
 /**
  * Test summary tests.
  */
-final class TestSummaryTest extends CHC_Unit_TestCase {
+final class TestSummaryTest extends CRHC_Unit_TestCase {
 
 	/**
 	 * Null test yields the "none" status.
 	 */
 	public function test_null_test() {
-		$summary = Cron_Health_Check::summarize_test( null, 1000, 30 );
+		$summary = CRHC_Cron_Health_Check::summarize_test( null, 1000, 30 );
 
 		$this->assertSame( 'none', $summary['status'] );
 		$this->assertNull( $summary['reason'] );
@@ -32,7 +32,7 @@ final class TestSummaryTest extends CHC_Unit_TestCase {
 			'status'  => 'running',
 		);
 
-		$summary = Cron_Health_Check::summarize_test( $test, 1010, 30 );
+		$summary = CRHC_Cron_Health_Check::summarize_test( $test, 1010, 30 );
 
 		$this->assertSame( 'running', $summary['status'] );
 	}
@@ -50,7 +50,7 @@ final class TestSummaryTest extends CHC_Unit_TestCase {
 			'source'   => 'loopback',
 		);
 
-		$summary = Cron_Health_Check::summarize_test( $test, 1010, 30 );
+		$summary = CRHC_Cron_Health_Check::summarize_test( $test, 1010, 30 );
 
 		$this->assertSame( 'passed', $summary['status'] );
 		$this->assertSame( 2.0, $summary['duration'] );
@@ -70,7 +70,7 @@ final class TestSummaryTest extends CHC_Unit_TestCase {
 			'source'   => 'loopback',
 		);
 
-		$summary = Cron_Health_Check::summarize_test( $test, 1010, 30 );
+		$summary = CRHC_Cron_Health_Check::summarize_test( $test, 1010, 30 );
 
 		$this->assertSame( 'passed', $summary['status'] );
 		$this->assertSame( 0.7, $summary['duration'] );
@@ -88,7 +88,7 @@ final class TestSummaryTest extends CHC_Unit_TestCase {
 			'status'  => 'running',
 		);
 
-		$summary = Cron_Health_Check::summarize_test( $test, 1000 + 31, 30 );
+		$summary = CRHC_Cron_Health_Check::summarize_test( $test, 1000 + 31, 30 );
 
 		$this->assertSame( 'failed', $summary['status'] );
 		$this->assertSame( 'timeout_no_request', $summary['reason'] );
@@ -108,7 +108,7 @@ final class TestSummaryTest extends CHC_Unit_TestCase {
 			'message' => 'WP-Cron is disabled via DISABLE_WP_CRON.',
 		);
 
-		$summary = Cron_Health_Check::summarize_test( $test, 5000, 30 );
+		$summary = CRHC_Cron_Health_Check::summarize_test( $test, 5000, 30 );
 
 		$this->assertSame( 'failed', $summary['status'] );
 		$this->assertSame( 'disabled', $summary['reason'] );

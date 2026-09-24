@@ -2,13 +2,13 @@
 /**
  * Tests for apply_overdue_verdict().
  *
- * @package Cron_Health_Check
+ * @package CRHC_Cron_Health_Check
  */
 
 /**
  * Overdue verdict tests.
  */
-final class OverdueVerdictTest extends CHC_Unit_TestCase {
+final class OverdueVerdictTest extends CRHC_Unit_TestCase {
 
 	/**
 	 * Base passed record fixture.
@@ -37,7 +37,7 @@ final class OverdueVerdictTest extends CHC_Unit_TestCase {
 			}
 		);
 
-		$test = Cron_Health_Check::apply_overdue_verdict( $this->passed_test(), 0, 0, 1800 );
+		$test = CRHC_Cron_Health_Check::apply_overdue_verdict( $this->passed_test(), 0, 0, 1800 );
 
 		$this->assertSame( 'passed', $test['status'] );
 		$this->assertNull( $test['reason'] );
@@ -55,7 +55,7 @@ final class OverdueVerdictTest extends CHC_Unit_TestCase {
 			}
 		);
 
-		$test = Cron_Health_Check::apply_overdue_verdict( $this->passed_test(), 3, 7200, 1800 );
+		$test = CRHC_Cron_Health_Check::apply_overdue_verdict( $this->passed_test(), 3, 7200, 1800 );
 
 		$this->assertSame( 'failed', $test['status'] );
 		$this->assertSame( 'overdue', $test['reason'] );
@@ -85,7 +85,7 @@ final class OverdueVerdictTest extends CHC_Unit_TestCase {
 			'reason'  => null,
 		);
 
-		$test = Cron_Health_Check::apply_overdue_verdict( $running, 1, 3600, 1800 );
+		$test = CRHC_Cron_Health_Check::apply_overdue_verdict( $running, 1, 3600, 1800 );
 
 		$this->assertSame( 'failed', $test['status'] );
 		$this->assertSame( 'overdue', $test['reason'] );
@@ -104,7 +104,7 @@ final class OverdueVerdictTest extends CHC_Unit_TestCase {
 			'reason'  => null,
 		);
 
-		$test = Cron_Health_Check::apply_overdue_verdict( $running, 0, 0, 1800 );
+		$test = CRHC_Cron_Health_Check::apply_overdue_verdict( $running, 0, 0, 1800 );
 
 		$this->assertSame( 'running', $test['status'] );
 		$this->assertNull( $test['reason'] );
@@ -125,7 +125,7 @@ final class OverdueVerdictTest extends CHC_Unit_TestCase {
 			'message'  => 'WP-Cron is disabled via DISABLE_WP_CRON.',
 		);
 
-		$test = Cron_Health_Check::apply_overdue_verdict( $failed, 5, 3600, 1800 );
+		$test = CRHC_Cron_Health_Check::apply_overdue_verdict( $failed, 5, 3600, 1800 );
 
 		$this->assertSame( 'failed', $test['status'] );
 		$this->assertSame( 'disabled', $test['reason'] );

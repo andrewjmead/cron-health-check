@@ -2,13 +2,13 @@
 /**
  * Tests for timeout_reason() and timeout_message().
  *
- * @package Cron_Health_Check
+ * @package CRHC_Cron_Health_Check
  */
 
 /**
  * Timeout message tests.
  */
-final class TimeoutMessageTest extends CHC_Unit_TestCase {
+final class TimeoutMessageTest extends CRHC_Unit_TestCase {
 
 	/**
 	 * A loopback WP_Error yields the loopback failure message and reason.
@@ -20,8 +20,8 @@ final class TimeoutMessageTest extends CHC_Unit_TestCase {
 			'url'   => 'http://localhost:8888/wp-cron.php',
 		);
 
-		$this->assertSame( 'timeout_loopback_error', Cron_Health_Check::timeout_reason( $spawn ) );
-		$message = Cron_Health_Check::timeout_message( $spawn, 30 );
+		$this->assertSame( 'timeout_loopback_error', CRHC_Cron_Health_Check::timeout_reason( $spawn ) );
+		$message = CRHC_Cron_Health_Check::timeout_message( $spawn, 30 );
 		$this->assertStringContainsString( 'cURL error 7', $message );
 		$this->assertStringContainsString( 'loopback', $message );
 	}
@@ -36,8 +36,8 @@ final class TimeoutMessageTest extends CHC_Unit_TestCase {
 			'url'   => 'https://example.com/wp-cron.php',
 		);
 
-		$this->assertSame( 'timeout_http_error', Cron_Health_Check::timeout_reason( $spawn ) );
-		$this->assertStringContainsString( 'HTTP 500', Cron_Health_Check::timeout_message( $spawn, 30 ) );
+		$this->assertSame( 'timeout_http_error', CRHC_Cron_Health_Check::timeout_reason( $spawn ) );
+		$this->assertStringContainsString( 'HTTP 500', CRHC_Cron_Health_Check::timeout_message( $spawn, 30 ) );
 	}
 
 	/**
@@ -50,8 +50,8 @@ final class TimeoutMessageTest extends CHC_Unit_TestCase {
 			'url'   => 'https://example.com/wp-cron.php',
 		);
 
-		$this->assertSame( 'timeout_no_fire', Cron_Health_Check::timeout_reason( $spawn ) );
-		$message = Cron_Health_Check::timeout_message( $spawn, 30 );
+		$this->assertSame( 'timeout_no_fire', CRHC_Cron_Health_Check::timeout_reason( $spawn ) );
+		$message = CRHC_Cron_Health_Check::timeout_message( $spawn, 30 );
 		$this->assertStringContainsString( 'HTTP 200', $message );
 		$this->assertStringContainsString( '30s', $message );
 	}
@@ -60,10 +60,10 @@ final class TimeoutMessageTest extends CHC_Unit_TestCase {
 	 * No spawn record at all means spawn_cron() never made a request.
 	 */
 	public function test_no_request() {
-		$this->assertSame( 'timeout_no_request', Cron_Health_Check::timeout_reason( null ) );
+		$this->assertSame( 'timeout_no_request', CRHC_Cron_Health_Check::timeout_reason( null ) );
 		$this->assertStringContainsString(
 			'did not make a request',
-			Cron_Health_Check::timeout_message( null, 30 )
+			CRHC_Cron_Health_Check::timeout_message( null, 30 )
 		);
 	}
 
@@ -72,7 +72,7 @@ final class TimeoutMessageTest extends CHC_Unit_TestCase {
 	 */
 	public function test_reason_prefix() {
 		foreach ( array( null, array( 'error' => 'x' ), array( 'code' => 500 ), array( 'code' => 200 ) ) as $spawn ) {
-			$this->assertSame( 0, strpos( Cron_Health_Check::timeout_reason( $spawn ), 'timeout' ) );
+			$this->assertSame( 0, strpos( CRHC_Cron_Health_Check::timeout_reason( $spawn ), 'timeout' ) );
 		}
 	}
 }

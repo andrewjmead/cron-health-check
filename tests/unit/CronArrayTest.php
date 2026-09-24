@@ -2,13 +2,13 @@
 /**
  * Tests for flatten_cron_array() and partition_overdue().
  *
- * @package Cron_Health_Check
+ * @package CRHC_Cron_Health_Check
  */
 
 /**
  * Cron array tests.
  */
-final class CronArrayTest extends CHC_Unit_TestCase {
+final class CronArrayTest extends CRHC_Unit_TestCase {
 
 	/**
 	 * A cron array fixture with two events.
@@ -44,7 +44,7 @@ final class CronArrayTest extends CHC_Unit_TestCase {
 	public function test_flatten_produces_rows() {
 		Brain\Monkey\Functions\when( 'has_action' )->justReturn( true );
 
-		$rows = Cron_Health_Check::flatten_cron_array( $this->fixture(), 3000 );
+		$rows = CRHC_Cron_Health_Check::flatten_cron_array( $this->fixture(), 3000 );
 
 		$this->assertCount( 2, $rows );
 		$this->assertSame( 'hook_a', $rows[0]['hook'] );
@@ -67,7 +67,7 @@ final class CronArrayTest extends CHC_Unit_TestCase {
 			5000 => array( 'late'  => array( 'x' => array( 'args' => array() ) ) ),
 			100  => array( 'early' => array( 'y' => array( 'args' => array() ) ) ),
 		);
-		$rows = Cron_Health_Check::flatten_cron_array( $cron, 6000 );
+		$rows = CRHC_Cron_Health_Check::flatten_cron_array( $cron, 6000 );
 
 		$this->assertSame( 'early', $rows[0]['hook'] );
 		$this->assertSame( 'late', $rows[1]['hook'] );
@@ -83,7 +83,7 @@ final class CronArrayTest extends CHC_Unit_TestCase {
 			}
 		);
 
-		$rows = Cron_Health_Check::flatten_cron_array( $this->fixture(), 3000 );
+		$rows = CRHC_Cron_Health_Check::flatten_cron_array( $this->fixture(), 3000 );
 
 		$this->assertFalse( $rows[0]['orphaned'] );
 		$this->assertTrue( $rows[1]['orphaned'] );
@@ -99,7 +99,7 @@ final class CronArrayTest extends CHC_Unit_TestCase {
 			'version' => 2,
 			100       => array( 'h' => array( 'k' => array( 'args' => array() ) ) ),
 		);
-		$rows = Cron_Health_Check::flatten_cron_array( $cron, 1000 );
+		$rows = CRHC_Cron_Health_Check::flatten_cron_array( $cron, 1000 );
 
 		$this->assertCount( 1, $rows );
 	}
@@ -116,7 +116,7 @@ final class CronArrayTest extends CHC_Unit_TestCase {
 			array( 'hook' => 'future', 'timestamp' => $now + 500 ),
 		);
 
-		$parts = Cron_Health_Check::partition_overdue( $rows, $now, 60 );
+		$parts = CRHC_Cron_Health_Check::partition_overdue( $rows, $now, 60 );
 
 		$this->assertCount( 2, $parts['overdue'] );
 		$this->assertCount( 2, $parts['upcoming'] );
@@ -134,7 +134,7 @@ final class CronArrayTest extends CHC_Unit_TestCase {
 			array( 'hook' => 'a', 'timestamp' => $now - 5000 ),
 		);
 
-		$parts = Cron_Health_Check::partition_overdue( $rows, $now, 60 );
+		$parts = CRHC_Cron_Health_Check::partition_overdue( $rows, $now, 60 );
 
 		$this->assertSame( 'a', $parts['overdue'][0]['hook'] );
 	}
