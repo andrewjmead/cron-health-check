@@ -103,7 +103,7 @@ if [[ "$MODE" == "release" ]]; then
 		die "git tag ${VERSION} not found — create and push it first: git tag ${VERSION} && git push ${GIT_REMOTE} ${VERSION}"
 	fi
 	LOCAL_TAG_COMMIT="$(git rev-parse "${VERSION}^{commit}")"
-	REMOTE_TAG="$(git ls-remote --tags "$GIT_REMOTE" "refs/tags/${VERSION}")"
+	REMOTE_TAG="$(git ls-remote --tags "$GIT_REMOTE" | grep -E "refs/tags/${VERSION}(\^\{\})?$" || true)"
 	[[ -n "$REMOTE_TAG" ]] || die "git tag ${VERSION} not found on ${GIT_REMOTE} — push it first: git push ${GIT_REMOTE} ${VERSION}"
 	# Annotated tags list the tag object plus a peeled ^{} line; lightweight tags list only the commit.
 	REMOTE_TAG_COMMIT="$(printf '%s\n' "$REMOTE_TAG" | awk -v t="refs/tags/${VERSION}^{}" '$2 == t {print $1}')"
