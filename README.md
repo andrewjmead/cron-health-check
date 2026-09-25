@@ -37,9 +37,9 @@ bin/build-zip.sh   # writes dist/spawn-cron-health-check.zip
 Deploys the plugin to the wp.org SVN repository. Requires `svn`, `rsync`, and a clean git tree.
 
 ```bash
-bin/deploy.sh release           # trunk + tag for the current version + assets
+bin/deploy.sh release           # trunk + tag + assets; needs the version's git tag on origin
 bin/deploy.sh assets            # update wp.org assets only (banner, icon, screenshots)
 bin/deploy.sh release --dry-run # stage everything without committing
 ```
 
-Credentials come from `--username`/`--password` or the `WPORG_USERNAME`/`WPORG_PASSWORD` environment variables (prompted if missing). See `bin/deploy.sh --help` for all flags.
+A `release` deploys the files from the release tag (e.g. `1.0.6`), so create and push that tag first (`git tag 1.0.6 && git push origin 1.0.6`). After the SVN commit it also creates a GitHub release via `gh` when available (`--no-github-release` to skip). Credentials come from `--username`/`--password` or the `WPORG_USERNAME`/`WPORG_PASSWORD` environment variables (prompted if missing). See `bin/deploy.sh --help` for all flags.

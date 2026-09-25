@@ -2,15 +2,16 @@
 #
 # Deploy Spawn – Cron Health Check to the WordPress.org plugin directory (SVN).
 #
-#   bin/deploy.sh release            deploy trunk + tag (version read from the plugin) + assets
+#   bin/deploy.sh release            deploy trunk + tag + assets; requires git tag <version> on the git remote
 #   bin/deploy.sh assets             update the wp.org assets/ directory only (banner, icon, screenshots)
 #
 # Options:
-#   --dry-run          do everything except `svn commit` (and the git tag push)
-#   --no-git-tag       skip creating/pushing the git tag on release
-#   --svn-url URL      override the SVN repository URL
-#   --username USER    wp.org username (or set WPORG_USERNAME)
-#   --password PASS    wp.org SVN password (or set WPORG_PASSWORD; prompted if missing)
+#   --dry-run              do everything except `svn commit` (and the GitHub release)
+#   --svn-url URL          override the SVN repository URL
+#   --git-remote NAME      git remote that must have the release tag (default: origin)
+#   --no-github-release    skip the GitHub release after a successful SVN commit
+#   --username USER        wp.org username (or set WPORG_USERNAME)
+#   --password PASS        wp.org SVN password (or set WPORG_PASSWORD; prompted if missing)
 #
 set -euo pipefail
 
@@ -43,7 +44,8 @@ usage() { sed -n '2,/^set -euo/p' "$0" | sed '$d' | sed 's/^# \{0,1\}//'; exit "
 
 MODE=""
 DRY_RUN=0
-GIT_TAG=1
+GIT_REMOTE="origin"
+GITHUB_RELEASE=1
 USERNAME="${WPORG_USERNAME:-}"
 PASSWORD="${WPORG_PASSWORD:-}"
 
@@ -51,7 +53,8 @@ while [[ $# -gt 0 ]]; do
 	case "$1" in
 		release|assets) MODE="$1" ;;
 		--dry-run)      DRY_RUN=1 ;;
-		--no-git-tag)   GIT_TAG=0 ;;
+		--git-remote)   GIT_REMOTE="$2"; shift ;;
+		--no-github-release) GITHUB_RELEASE=0 ;;
 		--svn-url)      SVN_URL="$2"; shift ;;
 		--username)     USERNAME="$2"; shift ;;
 		--password)     PASSWORD="$2"; shift ;;
@@ -95,17 +98,33 @@ fi
 VERSION="$HEADER_VERSION"
 info "plugin version $VERSION (header, SPCR_VERSION and Stable tag agree)"
 
-if [[ "$MODE" == "release" ]] && ! grep -q "^= ${VERSION} =" src/readme.txt; then
-	die "readme.txt has no changelog entry '= ${VERSION} ='"
-fi
-
-if [[ "$MODE" == "release" && $GIT_TAG -eq 1 ]]; then
-	if git rev-parse -q --verify "refs/tags/${VERSION}" >/dev/null; then
-		die "git tag ${VERSION} already exists locally"
+if [[ "$MODE" == "release" ]]; then
+	if ! git rev-parse -q --verify "refs/tags/${VERSION}" >/dev/null; then
+		die "git tag ${VERSION} not found — create and push it first: git tag ${VERSION} && git push ${GIT_REMOTE} ${VERSION}"
 	fi
-	git fetch -q --tags origin
-	if git rev-parse -q --verify "refs/tags/${VERSION}" >/dev/null; then
-		die "git tag ${VERSION} already exists on origin"
+	LOCAL_TAG_COMMIT="$(git rev-parse "${VERSION}^{commit}")"
+	REMOTE_TAG="$(git ls-remote --tags "$GIT_REMOTE" "refs/tags/${VERSION}")"
+	[[ -n "$REMOTE_TAG" ]] || die "git tag ${VERSION} not found on ${GIT_REMOTE} — push it first: git push ${GIT_REMOTE} ${VERSION}"
+	# Annotated tags list the tag object plus a peeled ^{} line; lightweight tags list only the commit.
+	REMOTE_TAG_COMMIT="$(printf '%s\n' "$REMOTE_TAG" | awk -v t="refs/tags/${VERSION}^{}" '$2 == t {print $1}')"
+	[[ -n "$REMOTE_TAG_COMMIT" ]] || REMOTE_TAG_COMMIT="$(printf '%s\n' "$REMOTE_TAG" | awk -v t="refs/tags/${VERSION}" '$2 == t {print $1}')"
+	[[ "$LOCAL_TAG_COMMIT" == "$REMOTE_TAG_COMMIT" ]] \
+		|| die "git tag ${VERSION} points at different commits locally and on ${GIT_REMOTE} (${LOCAL_TAG_COMMIT} vs ${REMOTE_TAG_COMMIT})"
+
+	TAG_PHP="$(git show "${VERSION}:src/${SLUG}.php")"
+	TAG_README="$(git show "${VERSION}:src/readme.txt")"
+	TAG_HEADER_VERSION="$(printf '%s\n' "$TAG_PHP" | sed -n 's/^ \* Version:[[:space:]]*\([0-9][0-9A-Za-z.+-]*\).*/\1/p' | head -1)"
+	TAG_CONST_VERSION="$(printf '%s\n' "$TAG_PHP" | sed -n "s/^define( 'SPCR_VERSION', '\([^']*\)' ).*/\1/p" | head -1)"
+	TAG_STABLE_TAG="$(printf '%s\n' "$TAG_README" | sed -n 's/^Stable tag:[[:space:]]*\([^[:space:]]*\).*/\1/p' | head -1)"
+	if [[ "$TAG_HEADER_VERSION" != "$VERSION" || "$TAG_CONST_VERSION" != "$VERSION" || "$TAG_STABLE_TAG" != "$VERSION" ]]; then
+		die "tag ${VERSION} version mismatch: header=${TAG_HEADER_VERSION:-?} SPCR_VERSION=${TAG_CONST_VERSION:-?} 'Stable tag'=${TAG_STABLE_TAG:-?}"
+	fi
+	printf '%s\n' "$TAG_README" | grep -q "^= ${VERSION} =" \
+		|| die "tag ${VERSION} readme.txt has no changelog entry '= ${VERSION} ='"
+	info "git tag ${VERSION} verified on ${GIT_REMOTE}"
+
+	if [[ "$(git rev-parse HEAD)" != "$LOCAL_TAG_COMMIT" ]]; then
+		warn "HEAD ($(git rev-parse --short HEAD)) does not match tag ${VERSION} — deploying the tagged files anyway"
 	fi
 fi
 
@@ -144,9 +163,7 @@ if [[ "$MODE" == "release" ]]; then
 	step "Building trunk/"
 	BUILD="$WORK/build"
 	mkdir -p "$BUILD"
-	for f in "${RUNTIME_FILES[@]}"; do
-		cp "$f" "$BUILD/"
-	done
+	git archive "$VERSION" -- "${RUNTIME_FILES[@]}" | tar -x -C "$BUILD" --strip-components=1
 	mkdir -p "$SVN/trunk"
 	rsync -a --delete --exclude='.svn' "$BUILD/" "$SVN/trunk/"
 	# shellcheck disable=SC2012 # runtime filenames are fixed and alphanumeric
@@ -194,7 +211,7 @@ fi
 if [[ $DRY_RUN -eq 1 ]]; then
 	step "Dry run — not committing"
 	info "would run: svn commit -m \"$MESSAGE\""
-	[[ "$MODE" == "release" && $GIT_TAG -eq 1 ]] && info "would run: git tag ${VERSION} && git push origin ${VERSION}"
+	[[ "$MODE" == "release" && $GITHUB_RELEASE -eq 1 ]] && info "would run: gh release create ${VERSION} <zip> --title ${VERSION} --notes-from-tag"
 	exit 0
 fi
 
@@ -211,12 +228,24 @@ svn commit -q --non-interactive --no-auth-cache \
 	|| die "svn commit failed"
 info "committed: $MESSAGE"
 
-if [[ "$MODE" == "release" && $GIT_TAG -eq 1 ]]; then
-	step "Tagging git ${VERSION}"
+if [[ "$MODE" == "release" && $GITHUB_RELEASE -eq 1 ]]; then
+	step "Creating GitHub release ${VERSION}"
+	mkdir -p "$WORK/zip/${SLUG}"
+	cp "$BUILD"/* "$WORK/zip/${SLUG}/"
+	ZIP="$WORK/${SLUG}.zip"
+	( cd "$WORK/zip" && zip -qr "$ZIP" "$SLUG" )
 	cd "$ROOT"
-	git tag -a "${VERSION}" -m "Release ${VERSION}"
-	git push -q origin "${VERSION}"
-	info "pushed tag ${VERSION}"
+	if command -v gh >/dev/null && gh auth status >/dev/null 2>&1; then
+		if gh release create "$VERSION" "$ZIP" --title "$VERSION" --notes-from-tag 2>/dev/null \
+			|| gh release create "$VERSION" "$ZIP" --title "$VERSION" --notes "Release ${VERSION}"; then
+			info "created GitHub release ${VERSION}"
+		else
+			warn "gh release create failed — run it manually: bin/build-zip.sh && gh release create ${VERSION} dist/${SLUG}.zip --title ${VERSION}"
+		fi
+	else
+		warn "gh is not installed or not authenticated — skipping GitHub release"
+		info "manual: bin/build-zip.sh && gh release create ${VERSION} dist/${SLUG}.zip --title ${VERSION}"
+	fi
 fi
 
 step "Done"
