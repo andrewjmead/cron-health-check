@@ -12,15 +12,13 @@ Check that WP-Cron is working correctly on your WordPress website.
 
 == Description ==
 
-Cron Health Check provides a simple test that you can run to verify that WP-Cron is working correctly on your WordPress website.
+Spawn gives you an easy way to verify that WP-Cron is working correctly on your WordPress site.
 
-The test checks three main things:
+First, Spawn checks your site environment. It verifies that WP-Cron is enabled. It also verifies that you don't have overdue events that are unable to run.
 
-1. It checks that WP-Cron is not disabled
-2. It checks that there are no overdue cron events that are unable to run
-3. It checks that it can schedule and run a test cron event
+Second, Spawn tests that it can schedule and run a real cron event.
 
-This is a free plugin. There's no pro version and no locked features.
+This is a completely free plugin. There is no pro version. There are no locked features.
 
 == Changelog ==
 
