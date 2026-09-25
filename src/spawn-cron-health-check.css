@@ -81,213 +81,74 @@
 	background: #dce6fb;
 }
 
-/* Stepper */
-.spcr-stepper {
-	list-style: none;
-	margin: 32px 0 0;
-	padding: 0;
-}
-
-.spcr-result:not(:empty) {
-	margin-top: 24px;
-}
-
-.spcr-step {
-	display: flex;
-	align-items: flex-start;
-	gap: 14px;
-	position: relative;
-	margin: 0;
-	padding-bottom: 26px;
-}
-
-.spcr-step:last-child {
-	padding-bottom: 0;
-}
-
-.spcr-step::before {
-	content: '';
-	position: absolute;
-	left: 15px;
-	top: 30px;
-	bottom: -2px;
-	border-left: 2px dotted #d4d4d4;
-}
-
-.spcr-step:last-child::before {
-	display: none;
-}
-
-.spcr-step.is-done::before {
-	border-left: 2px solid #a9c2f3;
-}
-
-.spcr-dot {
-	width: 32px;
-	height: 32px;
-	border-radius: 50%;
-	background: #f1f1f2;
-	color: #8a8a8a;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	position: relative;
-	z-index: 1;
-	flex-shrink: 0;
-	transition: background-color .2s, box-shadow .2s;
-}
-
-.spcr-step-icon {
-	display: block;
-	width: 15px;
-	height: 15px;
-}
-
-.spcr-step[data-step="spawning"] .spcr-step-icon {
-	transform: translateX(1px);
-}
-
-.spcr-step-body {
-	display: flex;
-	flex-direction: column;
-	min-width: 0;
-}
-
-.spcr-step-num {
-	font-size: 11px;
-	line-height: 14px;
-	color: #8a8a8a;
-	padding-top: 1px;
-}
-
-.spcr-step-label {
-	font-size: 14px;
-	font-weight: 500;
-	line-height: 18px;
-	color: #6a6a6a;
-}
-
-.spcr-step-status {
-	display: block;
-	font-size: 12px;
-	color: #6a6a6a;
-	line-height: 16px;
-	margin-top: 4px;
-}
-
-.spcr-step-status:empty {
-	display: none;
-}
-
-.spcr-step.is-active .spcr-step-label,
-.spcr-step.is-done .spcr-step-label,
-.spcr-step.is-failed .spcr-step-label {
-	color: #1a1a1a;
-}
-
-.spcr-step.is-active .spcr-dot {
-	background: #e5e5e6;
-	color: #6a6a6a;
-	animation: spcr-pulse 1s ease-in-out infinite;
-}
-
-.spcr-step.is-done .spcr-dot {
-	background: #2662eb;
-	box-shadow: 0 0 0 4px #dbe6fb;
-}
-
-.spcr-step.is-failed .spcr-dot {
-	background: #b3261e;
-	box-shadow: 0 0 0 4px #f6dcd9;
-}
-
-.spcr-step.is-done .spcr-step-icon,
-.spcr-step.is-failed .spcr-step-icon {
-	display: none;
-}
-
-.spcr-step.is-done .spcr-dot::after {
-	content: '';
-	position: absolute;
-	left: 8px;
-	top: 8px;
-	width: 16px;
-	height: 16px;
-	background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m4 12 5 5L20 6'/%3E%3C/svg%3E") center / contain no-repeat;
-}
-
-.spcr-step.is-failed .spcr-dot::before,
-.spcr-step.is-failed .spcr-dot::after {
-	content: '';
-	position: absolute;
-	left: 15px;
-	top: 10px;
-	width: 2.5px;
-	height: 12px;
-	border-radius: 1px;
-	background: #fff;
-}
-
-.spcr-step.is-failed .spcr-dot::before {
-	transform: rotate(45deg);
-}
-
-.spcr-step.is-failed .spcr-dot::after {
-	transform: rotate(-45deg);
-}
-
-@keyframes spcr-pulse {
-	0%, 100% { box-shadow: 0 0 0 0 rgba(120, 120, 120, 0.35); }
-	50% { box-shadow: 0 0 0 6px rgba(120, 120, 120, 0); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-	.spcr-step.is-active .spcr-dot {
-		animation: none;
-	}
-	.spcr-dot {
-		transition: none;
-	}
-}
-
 .spcr-lock-action {
 	margin: 12px 0 0;
 }
 
-/* Report */
+/* Report: one grouped list that starts idle-gray and becomes the report */
 .spcr-report {
+	margin-top: 24px;
+	padding: 12px;
+	border: 1px solid #dcdcde;
+	border-radius: 8px;
+	background: #f6f7f7;
 	font-size: 13px;
 	line-height: 1.55;
 	color: #3c434a;
-	padding: 12px;
-	border: 1px solid;
-	border-radius: 8px;
+	transition: background .4s ease, border-color .4s ease;
 }
 
-.spcr-report-passed {
+.spcr-report.is-passed {
 	background: #eef8f4;
 	border-color: #bfe3d5;
 }
 
-.spcr-report-failed {
+.spcr-report.is-failed {
 	background: #fcf0ef;
 	border-color: #efc6c2;
+}
+
+/* Banner slides in once the run finishes */
+.spcr-banner-wrap {
+	display: grid;
+	grid-template-rows: 0fr;
+	transition: grid-template-rows .35s ease;
+}
+
+.spcr-report.is-passed .spcr-banner-wrap,
+.spcr-report.is-failed .spcr-banner-wrap {
+	grid-template-rows: 1fr;
+}
+
+.spcr-banner-wrap > div {
+	overflow: hidden;
+	min-height: 0;
 }
 
 .spcr-report-banner {
 	display: flex;
 	align-items: center;
 	gap: 12px;
-	padding: 14px 18px;
+	padding: 12px 16px;
 	border-radius: 6px;
+	margin-bottom: 12px;
 	color: #fff;
+	opacity: 0;
+	transform: translateY(-6px);
+	transition: opacity .3s ease .15s, transform .3s ease .15s;
 }
 
-.spcr-report-passed .spcr-report-banner {
+.spcr-report.is-passed .spcr-report-banner,
+.spcr-report.is-failed .spcr-report-banner {
+	opacity: 1;
+	transform: none;
+}
+
+.spcr-report.is-passed .spcr-report-banner {
 	background: #2a9d7a;
 }
 
-.spcr-report-failed .spcr-report-banner {
+.spcr-report.is-failed .spcr-report-banner {
 	background: #c9433a;
 }
 
@@ -302,7 +163,6 @@
 	font-size: 13px;
 	font-weight: 400;
 	opacity: .9;
-	white-space: nowrap;
 }
 
 .spcr-mark {
@@ -314,6 +174,7 @@
 	border-radius: 50%;
 	flex: 0 0 auto;
 	box-sizing: border-box;
+	transition: background .25s ease;
 }
 
 .spcr-report-banner .spcr-mark {
@@ -322,17 +183,42 @@
 
 .spcr-mark svg {
 	display: block;
-	width: 10px;
-	height: 10px;
+	width: 18px;
+	height: 18px;
 	stroke: #fff;
-	stroke-width: 3.5;
+	stroke-width: 2;
 	fill: none;
 	stroke-linecap: round;
 	stroke-linejoin: round;
 }
 
+.spcr-mark svg path {
+	display: none;
+}
+
+.spcr-report.is-passed .spcr-report-banner .spcr-ok {
+	display: block;
+}
+
+.spcr-report.is-failed .spcr-report-banner .spcr-x {
+	display: block;
+}
+
+.spcr-group-heading {
+	margin: 0 0 6px;
+	font-size: 12px;
+	font-weight: 500;
+	color: #646970;
+	letter-spacing: .02em;
+	text-transform: uppercase;
+	padding: 0 2px;
+}
+
+.spcr-report-list + .spcr-group-heading {
+	margin-top: 14px;
+}
+
 .spcr-report-list {
-	margin-top: 12px;
 	background: #fff;
 	border: 1px solid #dcdcde;
 	border-radius: 6px;
@@ -357,8 +243,14 @@
 	border: 0;
 	font: inherit;
 	font-size: 13px;
-	color: #1a1a1a;
+	color: inherit;
 	text-align: left;
+	user-select: none;
+	cursor: default;
+}
+
+.spcr-report-item.is-passed .spcr-report-row,
+.spcr-report-item.is-failed .spcr-report-row {
 	cursor: pointer;
 }
 
@@ -367,27 +259,62 @@
 	outline-offset: -2px;
 }
 
-.spcr-report-row:disabled {
-	cursor: default;
+/* Row marks: idle ring -> spinner / check / X / dashed circle */
+.spcr-report-item .spcr-mark {
+	border: 2px solid #dcdcde;
+	background: #fff;
+	transition: background .25s, border-color .25s;
+}
+
+.spcr-report-item .spcr-mark svg {
+	width: 14px;
+	height: 14px;
 }
 
 .spcr-report-item.is-passed .spcr-mark {
 	background: #2a9d7a;
+	border-color: #2a9d7a;
+}
+
+.spcr-report-item.is-passed .spcr-mark .spcr-ok {
+	display: block;
 }
 
 .spcr-report-item.is-failed .spcr-mark {
 	background: #c9433a;
+	border-color: #c9433a;
+}
+
+.spcr-report-item.is-failed .spcr-mark .spcr-x {
+	display: block;
 }
 
 .spcr-report-item.is-skipped .spcr-mark {
-	background: transparent;
+	background: none;
 	border: 2px dashed #c3c4c7;
+}
+
+.spcr-report-item.is-running .spcr-mark {
+	border-color: #2662eb;
+	border-top-color: transparent;
+	animation: spcr-spin .8s linear infinite;
+}
+
+@keyframes spcr-spin {
+	to { transform: rotate(360deg); }
 }
 
 .spcr-report-name {
 	flex: 1;
 	font-size: 13px;
 	font-weight: 500;
+	color: #646970;
+	transition: color .25s;
+}
+
+.spcr-report-item.is-passed .spcr-report-name,
+.spcr-report-item.is-failed .spcr-report-name {
+	color: #1a1a1a;
 }
 
 .spcr-report-item.is-skipped .spcr-report-name {
@@ -404,9 +331,12 @@
 }
 
 .spcr-chevron {
-	flex: 0 0 auto;
+	width: 14px;
+	height: 14px;
 	color: #8c8f94;
-	transition: transform .25s ease;
+	flex: 0 0 auto;
+	opacity: 0;
+	transition: transform .25s ease, opacity .25s;
 }
 
 .spcr-chevron svg {
@@ -418,6 +348,11 @@
 	fill: none;
 	stroke-linecap: round;
 	stroke-linejoin: round;
+}
+
+.spcr-report-item.is-passed .spcr-chevron,
+.spcr-report-item.is-failed .spcr-chevron {
+	opacity: 1;
 }
 
 .spcr-report-item.is-open .spcr-chevron {
@@ -447,6 +382,7 @@
 
 .spcr-report-body {
 	padding: 2px 12px 12px;
+	color: #3c434a;
 }
 
 .spcr-report-body p {
@@ -458,7 +394,6 @@
 }
 
 .spcr-why {
-	margin-top: 4px;
 	padding: 12px 14px;
 	background: #f6f7f7;
 	border-radius: 6px;
@@ -531,9 +466,17 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+	.spcr-report,
+	.spcr-banner-wrap,
+	.spcr-report-banner,
 	.spcr-report-panel,
 	.spcr-report-inner,
-	.spcr-chevron {
+	.spcr-chevron,
+	.spcr-report-name,
+	.spcr-report-item .spcr-mark {
 		transition: none;
+	}
+	.spcr-report-item.is-running .spcr-mark {
+		animation: none;
 	}
 }

@@ -247,28 +247,7 @@ final class SPCR_Cron_Health_Check {
 					'requestFailed'        => __( 'Request failed. Check your connection and try again.', 'spawn-cron-health-check' ),
 					'couldNotStart'        => __( 'Failed to schedule a test cron event.', 'spawn-cron-health-check' ),
 					'timeout'              => __( 'The event was scheduled but never ran.', 'spawn-cron-health-check' ),
-					/* translators: 1: duration in seconds, 2: trigger source. */
-					'firedIn'              => __( 'Cron fired in %1$ss via %2$s.', 'spawn-cron-health-check' ),
-					/* translators: %s: duration in seconds. */
-					'firedInNoSource'      => __( 'Cron fired in %ss.', 'spawn-cron-health-check' ),
-					'neverRan'             => __( 'The event was scheduled but never ran.', 'spawn-cron-health-check' ),
 					'notRun'               => __( 'Not run', 'spawn-cron-health-check' ),
-					'disabledUndefined'    => __( 'The option DISABLE_WP_CRON is not defined. WP-Cron is enabled.', 'spawn-cron-health-check' ),
-					'disabledFalse'        => __( 'The option DISABLE_WP_CRON is set to false. WP-Cron is enabled.', 'spawn-cron-health-check' ),
-					'disabledTrue'         => __( 'The option DISABLE_WP_CRON is set to true. WP-Cron is disabled and WordPress will not be able to run cron events.', 'spawn-cron-health-check' ),
-					'overdueNone'          => __( 'No overdue cron events were found.', 'spawn-cron-health-check' ),
-					/* translators: %s: overdue event count. */
-					'overdueSome'          => __( 'There are %s cron event(s) that are more than 30 minutes overdue. WP-Cron is not working.', 'spawn-cron-health-check' ),
-					'scheduledOk'          => __( 'Scheduled a test cron event.', 'spawn-cron-health-check' ),
-					'scheduleFailed'       => __( 'Failed to schedule a test cron event.', 'spawn-cron-health-check' ),
-					/* translators: %s: HTTP status code. */
-					'spawnOk'              => __( 'spawn_cron() sent the loopback request to wp-cron.php (HTTP %s).', 'spawn-cron-health-check' ),
-					'spawnSent'            => __( 'spawn_cron() sent the loopback request to wp-cron.php.', 'spawn-cron-health-check' ),
-					'spawnAlternate'       => __( 'ALTERNATE_WP_CRON is enabled; cron is triggered by a page redirect instead.', 'spawn-cron-health-check' ),
-					/* translators: %s: HTTP status code. */
-					'spawnHttpError'       => __( 'wp-cron.php responded with HTTP %s.', 'spawn-cron-health-check' ),
-					/* translators: %s: timeout in seconds. */
-					'waitingUpTo'          => __( 'Waiting up to %ss for the event to fire…', 'spawn-cron-health-check' ),
 					'bannerPassed'         => __( 'WP-Cron is working correctly', 'spawn-cron-health-check' ),
 					'bannerFailed'         => __( 'WP-Cron is not working correctly', 'spawn-cron-health-check' ),
 					'whyMeans'             => __( 'What this usually means', 'spawn-cron-health-check' ),
@@ -315,7 +294,7 @@ final class SPCR_Cron_Health_Check {
 					'r3Http500Means'       => __( 'A 500 means PHP crashed while running wp-cron.php. Usually a scheduled callback from a plugin or theme is fatal-erroring, so every event after it never runs.', 'spawn-cron-health-check' ),
 					'r3Http500Check1'      => __( 'Check the PHP error log for the fatal error and which plugin or theme it comes from.', 'spawn-cron-health-check' ),
 					'r3Http500Check2'      => __( 'Deactivate recently added or updated plugins and run the check again.', 'spawn-cron-health-check' ),
-					'r3Http500Check3'      => __( 'The overdue events below show which scheduled events are being blocked.', 'spawn-cron-health-check' ),
+					'r3Http500Check3'      => __( 'The overdue events check above shows which scheduled events are being blocked.', 'spawn-cron-health-check' ),
 					'r3HttpMeans'          => __( 'The server is refusing or failing to serve wp-cron.php, so WordPress cannot run its scheduled events.', 'spawn-cron-health-check' ),
 					'r3HttpCheck1'         => __( 'A security plugin, firewall, or server rule may be blocking wp-cron.php — ask your host or check your security plugin\'s logs.', 'spawn-cron-health-check' ),
 					'r3HttpCheck2'         => __( 'HTTP basic auth or a maintenance mode password on the site also blocks the server\'s own requests.', 'spawn-cron-health-check' ),
@@ -329,15 +308,11 @@ final class SPCR_Cron_Health_Check {
 					/* translators: %s: timeout in seconds. */
 					'r4FailDetail'         => __( 'WordPress reached wp-cron.php, but the test event had not run after %s seconds.', 'spawn-cron-health-check' ),
 					'r4Means'              => __( 'Cron is being triggered but is not getting through its queue. Usually one earlier event has a callback that hangs or crashes, which stops everything scheduled after it.', 'spawn-cron-health-check' ),
-					'r4Check1'             => __( 'Look at the overdue events below — the oldest one is the most likely culprit; the hook name usually tells you which plugin owns it.', 'spawn-cron-health-check' ),
+					'r4Check1'             => __( 'Look at the overdue events above — the oldest one is the most likely culprit; the hook name usually tells you which plugin owns it.', 'spawn-cron-health-check' ),
 					'r4Check2'             => __( 'Check the PHP error log for errors during wp-cron.php requests.', 'spawn-cron-health-check' ),
 					'r4Check3'             => __( 'Run the check again — a cron run may simply have been in progress.', 'spawn-cron-health-check' ),
 					'r4AltMeans'           => __( 'ALTERNATE_WP_CRON only fires on front-end page loads, so a quiet site may need more time.', 'spawn-cron-health-check' ),
 					'r4AltCheck1'          => __( 'Open the front end of the site in another tab, then run the check again.', 'spawn-cron-health-check' ),
-					'r2Skip'               => __( 'Schedule a test cron event', 'spawn-cron-health-check' ),
-					'r3Skip'               => __( 'Attempt to run the test cron event', 'spawn-cron-health-check' ),
-					'r4Skip'               => __( 'Confirm the test cron event fired', 'spawn-cron-health-check' ),
-					'r5Skip'               => __( 'Check for overdue cron events', 'spawn-cron-health-check' ),
 					'r5Pass'               => __( 'No overdue cron events', 'spawn-cron-health-check' ),
 					/* translators: 1: total scheduled events, 2: grace period in minutes. */
 					'r5PassDetail'         => __( 'All %1$s scheduled events are on time. Nothing is more than %2$s minutes past its scheduled run.', 'spawn-cron-health-check' ),
@@ -354,7 +329,7 @@ final class SPCR_Cron_Health_Check {
 					/* translators: %s: number of overdue events not shown. */
 					'r5More'               => __( '…and %s more.', 'spawn-cron-health-check' ),
 					'r5Means'              => __( 'WP-Cron only runs when your site is visited. If the site has been quiet, run this check again — if the events clear, nothing is wrong.', 'spawn-cron-health-check' ),
-					'r5MeansFailed'        => __( ' If they stay overdue, WordPress is queuing work but never getting to run it, which matches the failure above.', 'spawn-cron-health-check' ),
+					'r5MeansFailed'        => __( ' If they stay overdue, WordPress is queuing work but never getting to run it, which matches the failed cron test below.', 'spawn-cron-health-check' ),
 					'r5MeansPassed'        => __( ' If they stay overdue even though the test event fired, something is stopping WordPress from getting through its queue — often one event whose callback crashes or hangs.', 'spawn-cron-health-check' ),
 					'r5Check1'             => __( 'Run the check again after visiting the front end of the site.', 'spawn-cron-health-check' ),
 					'r5Check2'             => __( 'The oldest overdue event is the most likely culprit; its hook name usually tells you which plugin owns it.', 'spawn-cron-health-check' ),
@@ -402,36 +377,45 @@ final class SPCR_Cron_Health_Check {
 					<?php esc_html_e( 'Run Health Check', 'spawn-cron-health-check' ); ?>
 				</button>
 
-				<ol class="spcr-stepper" id="spcr-stepper">
-					<?php
-					$steps = array(
-						'enabled'   => array( __( 'Check that WP-Cron is enabled', 'spawn-cron-health-check' ), '<path d="M12 2v10"/><path d="M18.4 6.6a9 9 0 1 1-12.77.04"/>' ),
-						'scheduled' => array( __( 'Schedule a test cron event', 'spawn-cron-health-check' ), '<path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/>' ),
-						'spawning'  => array( __( 'Attempt to run the test cron event', 'spawn-cron-health-check' ), '<path d="M6 4.5v15a1 1 0 0 0 1.5.86l12-7.5a1 1 0 0 0 0-1.72l-12-7.5A1 1 0 0 0 6 4.5z"/>' ),
-						'waiting'   => array( __( 'Confirm the test cron event fired', 'spawn-cron-health-check' ), '<path d="M5 22h14"/><path d="M5 2h14"/><path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22"/><path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"/>' ),
-						'overdue'   => array( __( 'Check for overdue cron events', 'spawn-cron-health-check' ), '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>' ),
-					);
-					$n     = 0;
-					foreach ( $steps as $key => $step ) :
-						++$n;
-						?>
-					<li class="spcr-step" data-step="<?php echo esc_attr( $key ); ?>">
-						<span class="spcr-dot"><svg class="spcr-step-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><?php echo $step[1]; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static SVG path markup. ?></svg></span>
-						<span class="spcr-step-body">
-							<span class="spcr-step-num">
-							<?php
-							/* translators: %d: step number. */
-							echo esc_html( sprintf( __( 'Step %d', 'spawn-cron-health-check' ), $n ) );
-							?>
-							</span>
-							<span class="spcr-step-label"><?php echo esc_html( $step[0] ); ?></span>
-							<span class="spcr-step-status" data-status></span>
-						</span>
-					</li>
+				<?php
+				$groups  = array(
+					__( 'Environment', 'spawn-cron-health-check' ) => array(
+						'enabled' => __( 'Check that WP-Cron is enabled', 'spawn-cron-health-check' ),
+						'overdue' => __( 'Check for overdue cron events', 'spawn-cron-health-check' ),
+					),
+					__( 'Cron test', 'spawn-cron-health-check' ) => array(
+						'scheduled' => __( 'Schedule a test cron event', 'spawn-cron-health-check' ),
+						'spawning'  => __( 'Attempt to run the test cron event', 'spawn-cron-health-check' ),
+						'waiting'   => __( 'Confirm the test cron event fired', 'spawn-cron-health-check' ),
+					),
+				);
+				$marksvg = '<svg viewBox="0 0 18 18" aria-hidden="true" focusable="false"><path class="spcr-ok" d="M5 9.2l2.6 2.6L13 6.4"/><path class="spcr-x" d="M6 6l6 6M12 6l-6 6"/></svg>';
+				$chevsvg = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m6 9 6 6 6-6"/></svg>';
+				?>
+				<div id="spcr-report" class="spcr-report" aria-live="polite">
+					<div class="spcr-banner-wrap"><div>
+						<div class="spcr-report-banner">
+							<span class="spcr-mark"><?php echo $marksvg; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static SVG markup. ?></span>
+							<span class="spcr-report-title"></span>
+							<span class="spcr-report-date"></span>
+						</div>
+					</div></div>
+					<?php foreach ( $groups as $heading => $group ) : ?>
+						<h3 class="spcr-group-heading"><?php echo esc_html( $heading ); ?></h3>
+						<div class="spcr-report-list">
+							<?php foreach ( $group as $key => $label ) : ?>
+							<div class="spcr-report-item" data-step="<?php echo esc_attr( $key ); ?>" data-idle="<?php echo esc_attr( $label ); ?>">
+								<button type="button" class="spcr-report-row" aria-expanded="false" aria-controls="spcr-panel-<?php echo esc_attr( $key ); ?>" disabled>
+									<span class="spcr-mark"><?php echo $marksvg; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static SVG markup. ?></span>
+									<span class="spcr-report-name"><?php echo esc_html( $label ); ?></span>
+									<span class="spcr-chevron"><?php echo $chevsvg; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static SVG markup. ?></span>
+								</button>
+								<div class="spcr-report-panel" id="spcr-panel-<?php echo esc_attr( $key ); ?>"><div class="spcr-report-inner"><div class="spcr-report-body"></div></div></div>
+							</div>
+							<?php endforeach; ?>
+						</div>
 					<?php endforeach; ?>
-				</ol>
-
-				<div id="spcr-result" class="spcr-result" aria-live="polite"></div>
+				</div>
 
 				<?php if ( 'stale' === $lock['state'] ) : ?>
 					<p class="spcr-lock-action">
