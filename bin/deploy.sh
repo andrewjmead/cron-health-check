@@ -100,12 +100,12 @@ if [[ "$MODE" == "release" ]] && ! grep -q "^= ${VERSION} =" src/readme.txt; the
 fi
 
 if [[ "$MODE" == "release" && $GIT_TAG -eq 1 ]]; then
-	if git rev-parse -q --verify "refs/tags/v${VERSION}" >/dev/null; then
-		die "git tag v${VERSION} already exists locally"
+	if git rev-parse -q --verify "refs/tags/${VERSION}" >/dev/null; then
+		die "git tag ${VERSION} already exists locally"
 	fi
 	git fetch -q --tags origin
-	if git rev-parse -q --verify "refs/tags/v${VERSION}" >/dev/null; then
-		die "git tag v${VERSION} already exists on origin"
+	if git rev-parse -q --verify "refs/tags/${VERSION}" >/dev/null; then
+		die "git tag ${VERSION} already exists on origin"
 	fi
 fi
 
@@ -194,7 +194,7 @@ fi
 if [[ $DRY_RUN -eq 1 ]]; then
 	step "Dry run — not committing"
 	info "would run: svn commit -m \"$MESSAGE\""
-	[[ "$MODE" == "release" && $GIT_TAG -eq 1 ]] && info "would run: git tag v${VERSION} && git push origin v${VERSION}"
+	[[ "$MODE" == "release" && $GIT_TAG -eq 1 ]] && info "would run: git tag ${VERSION} && git push origin ${VERSION}"
 	exit 0
 fi
 
@@ -212,11 +212,11 @@ svn commit -q --non-interactive --no-auth-cache \
 info "committed: $MESSAGE"
 
 if [[ "$MODE" == "release" && $GIT_TAG -eq 1 ]]; then
-	step "Tagging git v${VERSION}"
+	step "Tagging git ${VERSION}"
 	cd "$ROOT"
-	git tag -a "v${VERSION}" -m "Release ${VERSION}"
-	git push -q origin "v${VERSION}"
-	info "pushed tag v${VERSION}"
+	git tag -a "${VERSION}" -m "Release ${VERSION}"
+	git push -q origin "${VERSION}"
+	info "pushed tag ${VERSION}"
 fi
 
 step "Done"
