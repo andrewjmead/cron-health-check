@@ -341,15 +341,14 @@
 	function finish( test, errorMessage ) {
 		stopPolling();
 		var ctx = buildCtx( test, errorMessage );
-		// Waiting resolves now; overdue is re-applied because its "usually
-		// means" text depends on whether a core step failed.
-		applyRow( 'waiting', rowFor( 'waiting', ctx ) );
-		applyRow( 'overdue', rowFor( 'overdue', ctx ) );
-		// When the start request itself failed, only the scheduled row carries
-		// the failure detail — apply it too.
-		if ( ctx.startFailed ) {
-			applyRow( 'scheduled', rowFor( 'scheduled', ctx ) );
-		}
+		// Settle every row that is not already passed: waiting resolves now,
+		// overdue's "usually means" text depends on whether a core step
+		// failed, and a failed start request never played the rows at all.
+		ORDER.forEach( function ( key ) {
+			if ( rows[ key ] && ! rows[ key ].classList.contains( 'is-passed' ) ) {
+				applyRow( key, rowFor( key, ctx ) );
+			}
+		} );
 		var failed = ! test || 'failed' === test.status;
 		if ( bannerTitle ) { bannerTitle.textContent = t( failed ? 'bannerFailed' : 'bannerPassed' ); }
 		if ( bannerDate ) { bannerDate.textContent = formatDate( Date.now() / 1000 ); }
