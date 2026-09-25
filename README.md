@@ -31,3 +31,15 @@ npm run test:integration   # runs the integration suite inside wp-env
 ```bash
 bin/build-zip.sh   # writes dist/spawn-cron-health-check.zip
 ```
+
+## Deploy to WordPress.org
+
+Deploys the plugin to the wp.org SVN repository. Requires `svn`, `rsync`, and a clean git tree.
+
+```bash
+bin/deploy.sh release           # trunk + tag for the current version + assets
+bin/deploy.sh assets            # update wp.org assets only (banner, icon, screenshots)
+bin/deploy.sh release --dry-run # stage everything without committing
+```
+
+Credentials come from `--username`/`--password` or the `WPORG_USERNAME`/`WPORG_PASSWORD` environment variables (prompted if missing). See `bin/deploy.sh --help` for all flags.
