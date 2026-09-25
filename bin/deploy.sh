@@ -72,6 +72,9 @@ step "Preflight"
 command -v svn >/dev/null || die "svn is not installed (brew install svn / apt install subversion)"
 command -v git >/dev/null || die "git is not installed"
 command -v rsync >/dev/null || die "rsync is not installed"
+if [[ "$MODE" == "release" && $GITHUB_RELEASE -eq 1 ]]; then
+	command -v zip >/dev/null || die "zip is not installed (needed for the GitHub release; or pass --no-github-release)"
+fi
 
 for f in "${RUNTIME_FILES[@]}"; do
 	[[ -f "$f" ]] || die "missing runtime file: $f"
