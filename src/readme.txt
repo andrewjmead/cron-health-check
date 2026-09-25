@@ -4,7 +4,7 @@ Tags: cron, wp-cron, scheduled events, debugging, site health
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.5
+Stable tag: 1.0.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -21,6 +21,9 @@ Second, Spawn tests that it can schedule and run a real cron event.
 This is a completely free plugin. There is no pro version. There are no locked features.
 
 == Changelog ==
+
+= 1.0.6 =
+* Added plugin banner.
 
 = 1.0.5 =
 * Refreshed plugin assets.
